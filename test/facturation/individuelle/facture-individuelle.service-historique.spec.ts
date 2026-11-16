@@ -56,6 +56,10 @@ describe('FactureIndividuelleService - contrôle des totaux', () => {
       {} as MouvementFactureService,
       {} as SuiviService,
       new FactureWorkflowService(),
+      {
+        verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
+        verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
   }
 
@@ -304,6 +308,10 @@ describe('FactureIndividuelleService - numérotation et mouvements', () => {
       mouvement as unknown as MouvementFactureService,
       { lire: vi.fn() } as unknown as SuiviService,
       new FactureWorkflowService(),
+      {
+        verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
+        verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
 
     return {
@@ -435,7 +443,7 @@ describe('FactureIndividuelleService - numérotation et mouvements', () => {
   });
 
   it('refuse la création hors des statuts autorisés avant de chercher une règle', async () => {
-    const { service } = creerServiceCreation(StatutFacture.VALIDEE);
+    const { service } = creerServiceCreation(StatutFacture.EN_VALIDATION);
 
     await expect(
       service.creer(7, { id: 5, role: RoleUtilisateur.OPERATEUR }, donnees),

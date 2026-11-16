@@ -126,6 +126,16 @@ export class SortieFactureDto {
 }
 
 export class ModifierFactureGlobaleDto {
+  @ApiPropertyOptional({
+    description:
+      'Date de réception après modification, au format AAAA-MM-JJ.',
+    format: 'date',
+  })
+  @ValidateIf((_objet: object, valeur: unknown) => valeur !== undefined)
+  @IsDateString({ strict: true }, { message: MESSAGE_DATE })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: MESSAGE_DATE })
+  dateRetourAction?: string;
+
   @ValidateIf((_objet: object, valeur: unknown) => valeur !== undefined)
   @IsInt({ message: 'Le prestataire doit être un identifiant entier.' })
   @IsPositive({ message: 'Le prestataire doit être un identifiant positif.' })

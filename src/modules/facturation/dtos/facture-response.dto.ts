@@ -300,8 +300,32 @@ export class LigneFactureResponseDto implements LigneFactureCalculee {
   @ApiProperty({ format: 'date' })
   dateActe!: string;
 
+  @ApiProperty({ format: 'date-time' })
+  dateSaisie!: string;
+
   @ApiProperty()
   idp!: string;
+
+  @ApiProperty()
+  nomPrenomBeneficiaire!: string;
+
+  @ApiProperty({ enum: ['AGT', 'CJT', 'EFT'], nullable: true })
+  codeFam!: 'AGT' | 'CJT' | 'EFT' | null;
+
+  @ApiProperty({ nullable: true })
+  obsIdp!: string | null;
+
+  @ApiProperty({ type: Number, nullable: true })
+  im!: number | null;
+
+  @ApiProperty({ nullable: true })
+  nomPrenomAgent!: string | null;
+
+  @ApiProperty({ nullable: true })
+  codeDirection!: string | null;
+
+  @ApiProperty({ nullable: true })
+  categorieAgent!: string | null;
 
   @ApiProperty({ type: LigneActeResponseDto })
   acte!: LigneActeResponseDto;

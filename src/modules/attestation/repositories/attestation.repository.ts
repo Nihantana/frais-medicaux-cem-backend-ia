@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 import type { Attestation } from '../../../generated/prisma/client.js';
 import type { DbClient } from '../../../infrastructure/prisma/db-client.type.js';
@@ -24,6 +25,7 @@ export class AttestationRepository {
   private toReadAttestation(attestation: Attestation): ReadAttestation {
     return {
       id: attestation.id,
+      reference: attestation.reference,
       attestationPath: attestation.attestationPath,
       dateValidation: attestation.dateValidation,
       naturePrestation: attestation.naturePrestation,
@@ -43,6 +45,7 @@ export class AttestationRepository {
   ): Promise<ReadAttestation> {
     const created = await this.client(tx).attestation.create({
       data: {
+        reference: `AT-${randomUUID()}`,
         attestationPath: attestation.attestationPath,
         naturePrestation: attestation.naturePrestation,
         servicePrestataire: attestation.servicePrestataire ?? null,

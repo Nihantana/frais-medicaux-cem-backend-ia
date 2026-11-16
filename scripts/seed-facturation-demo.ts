@@ -12,6 +12,7 @@ import {
   Sexe,
   StatutAttestation,
   StatutFacture,
+  StatutPrestataire,
   StatutPEC,
   TypeRegle,
   TypeMouvement,
@@ -25,6 +26,8 @@ const IDP_DEMO = 'DEMO-FACTURATION-T6-001';
 const MATRICULE_AGENT_DEMO = 99000001;
 const NUM_FACTURE_DEMO = 'DEMO-FACTURATION-T6';
 const REMARQUE_FACTURE_DEMO = `${PREFIXE_DEMO}TABLEAU T6`;
+const NIF_PRESTATAIRE_DEMO = 'DEMO-FACTURATION-NIF';
+const STAT_PRESTATAIRE_DEMO = 'DEMO-FACTURATION-STAT';
 
 function lireIdEnv(cle: string): number {
   const valeur = process.env[cle];
@@ -49,19 +52,60 @@ function dateDuJourUtc(): Date {
   );
 }
 
+async function obtenirPrestataireDemo(
+  prisma: PrismaClient,
+): Promise<{ id: number }> {
+  const prestataireExistant = await prisma.prestataire.findUnique({
+    where: { nif: NIF_PRESTATAIRE_DEMO },
+    select: { id: true },
+  });
+  if (prestataireExistant !== null) {
+    return prestataireExistant;
+  }
+
+  const lieu =
+    (await prisma.lieu.findFirst({
+      where: { nom: `${PREFIXE_DEMO}Antananarivo` },
+      select: { id: true },
+    })) ??
+    (await prisma.lieu.create({
+      data: { nom: `${PREFIXE_DEMO}Antananarivo` },
+      select: { id: true },
+    }));
+  const categorie =
+    (await prisma.categoriePrestataire.findFirst({
+      where: { nom: `${PREFIXE_DEMO}Clinique` },
+      select: { id: true },
+    })) ??
+    (await prisma.categoriePrestataire.create({
+      data: { nom: `${PREFIXE_DEMO}Clinique` },
+      select: { id: true },
+    }));
+
+  const prestataire = await prisma.prestataire.create({
+    data: {
+      nom: `${PREFIXE_DEMO}Clinique`,
+      adresse: 'Antananarivo',
+      statut: StatutPrestataire.PRIVE,
+      nif: NIF_PRESTATAIRE_DEMO,
+      stat: STAT_PRESTATAIRE_DEMO,
+      dateDebutConvention: new Date('2026-01-01T00:00:00.000Z'),
+      dateFinConvention: new Date('2026-12-31T00:00:00.000Z'),
+      listePrestation: 'CON-01, LAB-01, IMG-01',
+      conventionPath: 'demo-facturation-convention',
+      lieuID: lieu.id,
+      categorieID: categorie.id,
+    },
+    select: { id: true },
+  });
+  return prestataire;
+}
+
 async function creerFactureT6Demo(
   prisma: PrismaClient,
   utilisateurId: number,
 ): Promise<{ id: number; refSociale: string; lignes: number[] }> {
-  const prestataire = await prisma.prestataire.findFirst({
-    orderBy: { id: 'asc' },
-    select: { id: true },
-  });
-  if (prestataire === null) {
-    throw new Error(
-      'Aucun prestataire n’est disponible. Créez ou importez un prestataire avant le seed.',
-    );
-  }
+  const prestataire = await obtenirPrestataireDemo(prisma);
 
   const codesActes = ['CON-01', 'LAB-01', 'IMG-01'];
   const actes = await prisma.acte.findMany({
@@ -135,9 +179,24 @@ async function creerFactureT6Demo(
     }
 
     const definitionsLignes = [
-      { code: 'CON-01', montant: '30000.00', depActe: '0.00', depPlafond: '0.00' },
-      { code: 'LAB-01', montant: '80000.00', depActe: '0.00', depPlafond: '0.00' },
-      { code: 'IMG-01', montant: '215000.00', depActe: '0.00', depPlafond: '15000.00' },
+      {
+        code: 'CON-01',
+        montant: '30000.00',
+        depActe: '0.00',
+        depPlafond: '0.00',
+      },
+      {
+        code: 'LAB-01',
+        montant: '80000.00',
+        depActe: '0.00',
+        depPlafond: '0.00',
+      },
+      {
+        code: 'IMG-01',
+        montant: '215000.00',
+        depActe: '0.00',
+        depPlafond: '15000.00',
+      },
     ] as const;
     const attestations = [];
     for (const [index, ligne] of definitionsLignes.entries()) {
@@ -153,6 +212,7 @@ async function creerFactureT6Demo(
         existante ??
           (await tx.attestation.create({
             data: {
+              reference: `AT-DEMO-FACTURATION-T6-${index + 1}`,
               prestataireID: prestataire.id,
               idpBeneficiaire: IDP_DEMO,
               naturePrestation,
@@ -307,9 +367,21 @@ async function main(): Promise<void> {
     await prisma.$connect();
     await prisma.$transaction(async (tx) => {
       const utilisateurs = [
-        { id: idsUtilisateurs[0]!, nom: `${PREFIXE_DEMO}Opérateur`, role: RoleUtilisateur.OPERATEUR },
-        { id: idsUtilisateurs[1]!, nom: `${PREFIXE_DEMO}Adjoint`, role: RoleUtilisateur.ADJOINT },
-        { id: idsUtilisateurs[2]!, nom: `${PREFIXE_DEMO}Chef`, role: RoleUtilisateur.CHEF },
+        {
+          id: idsUtilisateurs[0]!,
+          nom: `${PREFIXE_DEMO}Opérateur`,
+          role: RoleUtilisateur.OPERATEUR,
+        },
+        {
+          id: idsUtilisateurs[1]!,
+          nom: `${PREFIXE_DEMO}Adjoint`,
+          role: RoleUtilisateur.ADJOINT,
+        },
+        {
+          id: idsUtilisateurs[2]!,
+          nom: `${PREFIXE_DEMO}Chef`,
+          role: RoleUtilisateur.CHEF,
+        },
       ];
 
       for (const utilisateur of utilisateurs) {
@@ -405,10 +477,7 @@ async function main(): Promise<void> {
     await catalogue.connect();
     await catalogue.query(sqlCatalogue);
 
-    const factureDemo = await creerFactureT6Demo(
-      prisma,
-      idsUtilisateurs[0]!,
-    );
+    const factureDemo = await creerFactureT6Demo(prisma, idsUtilisateurs[0]!);
 
     console.log('Seed de démonstration facturation terminé.');
     console.log(`Opérateur : ${idsUtilisateurs[0]}`);
@@ -426,7 +495,9 @@ async function main(): Promise<void> {
 
 main().catch((erreur: unknown) => {
   console.error(
-    erreur instanceof Error ? erreur.message : 'Erreur inconnue pendant le seed.',
+    erreur instanceof Error
+      ? erreur.message
+      : 'Erreur inconnue pendant le seed.',
   );
   process.exitCode = 1;
 });

@@ -10,10 +10,14 @@ import type {
   PieceJointeFacture,
   Prisma,
 } from '../../../generated/prisma/client.js';
-import { StatutFacture } from '../../../generated/prisma/enums.js';
+import {
+  StatutFacture,
+  TypeMouvement,
+} from '../../../generated/prisma/enums.js';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 import { FileStorageService } from '../../../infrastructure/storage/file-storage.service.js';
 import { FactureClotureService } from '../shared/facture-cloture.service.js';
+import { MouvementFactureService } from '../shared/mouvement-facture.service.js';
 
 const TAILLE_MAX_OCTETS = 10 * 1024 * 1024;
 const NOMBRE_MAX_PIECES = 20;
@@ -43,6 +47,7 @@ export class PieceJointeFactureService {
     private readonly prisma: PrismaService,
     private readonly stockage: FileStorageService,
     private readonly cloture: FactureClotureService = new FactureClotureService(),
+    private readonly mouvements: MouvementFactureService = new MouvementFactureService(),
   ) {}
 
   async ajouter(
@@ -102,7 +107,7 @@ export class PieceJointeFactureService {
           );
         }
 
-        return tx.pieceJointeFacture.create({
+        const piece = await tx.pieceJointeFacture.create({
           data: {
             factureGlobaleId: factureId,
             path,
@@ -113,6 +118,26 @@ export class PieceJointeFactureService {
           },
           include: { ajoutePar: { select: { id: true, nom: true } } },
         });
+
+        if (facture.statut === StatutFacture.A_CORRIGER) {
+          await tx.factureGlobale.updateMany({
+            where: { id: factureId, statut: StatutFacture.A_CORRIGER },
+            data: {
+              statut: StatutFacture.ENREGISTREE,
+              dateValidation: null,
+              valideParId: null,
+              updatedAt: new Date(),
+            },
+          });
+          await this.mouvements.ecrire(tx, {
+            factureGlobaleId: factureId,
+            type: TypeMouvement.RECEPTION_APRES_MODIFICATION,
+            effectueParId: ajouteParId,
+            remarque: 'Pièce jointe corrigée reçue.',
+          });
+        }
+
+        return piece;
       });
       return this.formater(piece);
     } catch (error: unknown) {

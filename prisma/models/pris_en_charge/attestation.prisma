@@ -7,21 +7,34 @@ enum StatutAttestation {
   @@schema("pec")
 }
 
+enum StatutUtilisationAttestation {
+  DISPONIBLE       @map("disponible")
+  JOINTE_A_FACTURE @map("jointe_a_facture")
+  CONSOMMEE        @map("consommee")
+  ANNULEE          @map("annulee")
+
+  @@map("statut_utilisation_attestation")
+  @@schema("pec")
+}
+
 model Attestation {
-  id                 Int                @id @default(autoincrement())
-  attestationPath    String?            @map("attestation_path") @db.VarChar(100)
-  dateValidation     DateTime?          @map("dt_validation")
-  naturePrestation   String             @map("nature_prestation") @db.VarChar(100)
-  servicePrestataire String?            @map("service_prestataire") @db.VarChar(50)
-  statut             StatutAttestation  @default(EN_ATTENTE)
-  datePEC            DateTime           @map("dt_pec")
+  id                 Int                          @id @default(autoincrement())
+  reference          String                       @unique
+  attestationPath    String?                      @map("attestation_path") @db.VarChar(100)
+  dateValidation     DateTime?                    @map("dt_validation")
+  naturePrestation   String                       @map("nature_prestation") @db.VarChar(100)
+  servicePrestataire String?                      @map("service_prestataire") @db.VarChar(50)
+  statut             StatutAttestation            @default(EN_ATTENTE)
+  statutUtilisation  StatutUtilisationAttestation @default(DISPONIBLE) @map("statut_utilisation")
+  datePEC            DateTime                     @map("dt_pec")
   suppressionStatut  SuppressionStatut?
 
   prestataireID   Int    @map("prestataire_id")
   idpBeneficiaire String @map("beneficiaire_id")
 
-  prestataire  Prestataire  @relation(fields: [prestataireID], references: [id])
-  beneficiaire Beneficiaire @relation(fields: [idpBeneficiaire], references: [idp])
+  prestataire        Prestataire         @relation(fields: [prestataireID], references: [id])
+  beneficiaire       Beneficiaire        @relation(fields: [idpBeneficiaire], references: [idp])
+  pieceJointeFacture PieceJointeFacture?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")

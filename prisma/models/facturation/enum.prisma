@@ -1,12 +1,12 @@
 enum StatutFacture {
-  ENREGISTREE   @map("enregistree")
-  EN_VALIDATION @map("en_validation")
-  RETOURNEE     @map("retournee")
-  VALIDEE       @map("validee")
-  SORTIE        @map("sortie")
-  A_CORRIGER    @map("a_corriger")
+  ENREGISTREE          @map("enregistree")
+  EN_VALIDATION        @map("en_validation")
+  RETOURNEE            @map("retournee")
+  VALIDEE              @map("validee")
+  SORTIE               @map("sortie")
+  A_CORRIGER           @map("a_corriger")
   SUPPRESSION_DEMANDEE @map("suppression_demandee")
-  SUPPRIMEE     @map("supprimee")
+  SUPPRIMEE            @map("supprimee")
 
   @@map("statut_facture")
   @@schema("facturation")
@@ -31,6 +31,27 @@ enum TypeMouvement {
   @@schema("facturation")
 }
 
+enum PorteeNotification {
+  INDIVIDUELLE @map("individuelle")
+  GLOBALE      @map("globale")
+
+  @@map("portee_notification")
+  @@schema("facturation")
+}
+
+enum TypeNotification {
+  ENVOI_VALIDATION
+  RETOUR_POUR_CORRECTION
+  RETOUR_PRESTATAIRE
+  RECEPTION_APRES_MODIFICATION
+  VALIDATION
+  SORTIE
+  DEMANDE_SUPPRESSION
+
+  @@map("type_notification")
+  @@schema("facturation")
+}
+
 enum ServiceSortie {
   AUTHENTIFICATION @map("authentification")
   CONTROLE         @map("controle")
@@ -45,5 +66,36 @@ enum MotifDecision {
   AUTRE                 @map("autre")
 
   @@map("motif_decision")
+  @@schema("facturation")
+}
+
+enum StatutControleVisuel {
+  A_VERIFIER @map("a_verifier")
+  EN_COURS   @map("en_cours")
+  ANOMALIE   @map("anomalie")
+  CONFORME   @map("conforme")
+  ERREUR     @map("erreur")
+
+  @@map("statut_controle_visuel")
+  @@schema("facturation")
+}
+
+enum StatutResultatControle {
+  CONFORME       @map("conforme")
+  ANOMALIE       @map("anomalie")
+  A_VERIFIER     @map("a_verifier")
+  NON_APPLICABLE @map("non_applicable")
+
+  @@map("statut_resultat_controle")
+  @@schema("facturation")
+}
+
+enum GraviteControle {
+  INFORMATION @map("information")
+  MINEURE     @map("mineure")
+  MAJEURE     @map("majeure")
+  BLOQUANTE   @map("bloquante")
+
+  @@map("gravite_controle")
   @@schema("facturation")
 }

@@ -1,0 +1,22 @@
+model Notification {
+  id               Int                @id @default(autoincrement())
+  utilisateurId    Int                @map("utilisateur_id")
+  factureGlobaleId Int                @map("facture_globale_id")
+  mouvementId      Int                @map("mouvement_id")
+  portee           PorteeNotification
+  type             TypeNotification
+  titre            String
+  message          String
+  luLe             DateTime?          @map("lu_le")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  utilisateur    Utilisateur     @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  factureGlobale FactureGlobale @relation(fields: [factureGlobaleId], references: [id], onDelete: Cascade)
+  mouvement      MouvementFacture @relation(fields: [mouvementId], references: [id], onDelete: Cascade)
+
+  @@unique([mouvementId, utilisateurId])
+  @@index([utilisateurId, luLe, createdAt])
+  @@index([factureGlobaleId])
+  @@map("notification")
+  @@schema("facturation")
+}

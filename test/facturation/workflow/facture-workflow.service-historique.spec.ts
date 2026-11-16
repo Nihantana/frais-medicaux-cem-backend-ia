@@ -73,12 +73,15 @@ describe('FactureWorkflowService', () => {
     ).toThrow(ConflictException);
   });
 
-  it('autorise les lignes en ENREGISTREE et A_CORRIGER uniquement', () => {
+  it('autorise les lignes en ENREGISTREE, A_CORRIGER et VALIDEE', () => {
     expect(() =>
       service.verifierEditionLigne(StatutFacture.ENREGISTREE),
     ).not.toThrow();
     expect(() =>
       service.verifierEditionLigne(StatutFacture.A_CORRIGER),
+    ).not.toThrow();
+    expect(() =>
+      service.verifierEditionLigne(StatutFacture.VALIDEE),
     ).not.toThrow();
 
     for (const statut of [
@@ -86,7 +89,6 @@ describe('FactureWorkflowService', () => {
       StatutFacture.EN_VALIDATION,
       StatutFacture.SUPPRESSION_DEMANDEE,
       StatutFacture.SUPPRIMEE,
-      StatutFacture.VALIDEE,
       StatutFacture.SORTIE,
     ]) {
       expect(() => service.verifierEditionLigne(statut)).toThrow(

@@ -190,6 +190,10 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
       { ecrire: vi.fn() } as unknown as MouvementFactureService,
       suiviT6 as unknown as SuiviService,
       new FactureWorkflowService(),
+      {
+        verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
+        verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
+      } as never,
     );
     const suiviT5 = new SuiviService(
       prisma as never,

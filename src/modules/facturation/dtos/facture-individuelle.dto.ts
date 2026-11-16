@@ -46,6 +46,17 @@ export class CreerFactureIndividuelleDto {
   @IsPositive()
   numPec?: number;
 
+  @ApiPropertyOptional({ description: 'Référence de paie saisie manuellement.' })
+  @IsOptional()
+  @IsString()
+  refPaie?: string;
+
+  @ApiPropertyOptional({ type: String, format: 'date', description: 'Mois prévu pour la retenue.' })
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(DATE)
+  moisAffectation?: string;
+
   @ApiProperty({ type: Number, minimum: 0 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
@@ -109,6 +120,20 @@ export class ModifierFactureIndividuelleDto {
   @IsInt()
   @IsPositive()
   numPec?: number;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Référence de paie saisie manuellement.',
+  })
+  @IsOptional()
+  @IsString()
+  refPaie?: string | null;
+
+  @ApiPropertyOptional({ type: String, format: 'date', nullable: true })
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(DATE)
+  moisAffectation?: string | null;
 
   @ApiPropertyOptional({ type: Number, minimum: 0 })
   @IsOptional()

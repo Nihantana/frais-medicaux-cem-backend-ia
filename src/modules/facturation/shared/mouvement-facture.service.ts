@@ -4,6 +4,7 @@ import type {
   MouvementFacture,
 } from '../../../generated/prisma/client.js';
 import { ServiceSortie, TypeMouvement } from '../../../generated/prisma/enums.js';
+import { NotificationFactureService } from './notification-facture.service.js';
 
 export interface NouveauMouvementFacture {
   factureGlobaleId: number;
@@ -18,13 +19,21 @@ export interface NouveauMouvementFacture {
 /** Point d'écriture des mouvements créés par le workflow Facturation. */
 @Injectable()
 export class MouvementFactureService {
+  constructor(
+    private readonly notifications?: NotificationFactureService,
+  ) {}
+
   async ecrire(
     tx: Prisma.TransactionClient,
     mouvement: NouveauMouvementFacture,
   ): Promise<MouvementFacture> {
-    return tx.mouvementFacture.create({
+    const mouvementCree = await tx.mouvementFacture.create({
       data: { ...mouvement, date: mouvement.date ?? dateMetierDuJour() },
     });
+    if (this.notifications !== undefined) {
+      await this.notifications.creerPourMouvement(tx, mouvementCree);
+    }
+    return mouvementCree;
   }
 }
 

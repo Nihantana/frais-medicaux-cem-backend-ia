@@ -1,6 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RoleUtilisateur } from '../../../generated/prisma/enums.js';
-
 export class UtilisateurResponseDto {
   @ApiProperty()
   id!: number;
@@ -8,8 +6,11 @@ export class UtilisateurResponseDto {
   @ApiProperty()
   nom!: string;
 
-  @ApiProperty({ enum: RoleUtilisateur })
-  role!: RoleUtilisateur;
+  @ApiProperty({ nullable: true })
+  email!: string | null;
+
+  @ApiProperty({ type: [String] })
+  roles!: string[];
 }
 
 export class UtilisateurReponseAvecMessageDto {

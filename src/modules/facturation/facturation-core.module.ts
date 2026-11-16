@@ -13,15 +13,19 @@ import { FactureCalculService } from './shared/facture-calcul.service.js';
 import { FactureClotureService } from './shared/facture-cloture.service.js';
 import { FacturePermissionsService } from './shared/facture-permissions.service.js';
 import { MouvementFactureService } from './shared/mouvement-facture.service.js';
+import { NotificationFactureService } from './shared/notification-facture.service.js';
 import { PieceJointeFactureService } from './pieces-jointes/piece-jointe-facture.service.js';
 import { SuiviCalculService } from './suivi/suivi-calcul.service.js';
 import { SuiviService } from './suivi/suivi.service.js';
+import { VerificationFactureModule } from '../verification-facture/verification-facture.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 const FACTURATION_SERVICES = [
   FactureGlobaleService,
   RefSocialService,
   FactureWorkflowService,
   MouvementFactureService,
+  NotificationFactureService,
   FactureCalculService,
   FactureIndividuelleService,
   CloturePaieService,
@@ -39,6 +43,8 @@ const FACTURATION_SERVICES = [
     PlafondModule,
     ReglesPriseEnChargeModule,
     StorageModule,
+    VerificationFactureModule,
+    AuthModule,
   ],
   providers: FACTURATION_SERVICES,
   exports: [
@@ -48,6 +54,7 @@ const FACTURATION_SERVICES = [
     CloturePaieService,
     PaieEtatService,
     PieceJointeFactureService,
+    NotificationFactureService,
     SuiviService,
   ],
 })

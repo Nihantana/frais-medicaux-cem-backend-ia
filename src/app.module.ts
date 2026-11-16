@@ -16,6 +16,7 @@ import { ProviderCategoryModule } from './modules/provider-category/provider-cat
 import { ProviderModule } from './modules/provider/provider.module.js';
 import { FacturationModule } from './modules/facturation/facturation.module.js';
 import { UtilisateurModule } from './modules/utilisateur/utilisateur.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UtilisateurModule } from './modules/utilisateur/utilisateur.module.js';
     ProviderModule,
     FacturationModule,
     UtilisateurModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

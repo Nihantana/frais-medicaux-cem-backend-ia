@@ -7,9 +7,10 @@ import { FactureIndividuelleController } from './individuelle/facture-individuel
 import { FactureWorkflowController } from './workflow/facture-workflow.controller.js';
 import { CloturePaieController } from './paie/cloture-paie.controller.js';
 import { PaieEtatController } from './paie/paie-etat.controller.js';
+import { AuthModule } from '../../auth/auth.module.js';
 
 @Module({
-  imports: [FacturationCoreModule, PrismaModule],
+  imports: [FacturationCoreModule, PrismaModule, AuthModule],
   providers: [FactureRoleGuard],
   controllers: [
     FactureGlobaleController,

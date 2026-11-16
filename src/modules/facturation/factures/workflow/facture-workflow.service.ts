@@ -204,7 +204,8 @@ export class FactureWorkflowService {
   verifierEditionLigne(statut: StatutFacture): void {
     if (
       statut === StatutFacture.ENREGISTREE ||
-      statut === StatutFacture.A_CORRIGER
+      statut === StatutFacture.A_CORRIGER ||
+      statut === StatutFacture.VALIDEE
     )
       return;
     throw new ConflictException(
@@ -230,8 +231,9 @@ export class FactureWorkflowService {
     action: ActionFacture,
     role: RoleUtilisateur,
     statutSuivantDynamique?: StatutFacture,
+    permissions?: readonly string[],
   ): StatutFacture {
-    this.permissions.verifier(action, role);
+    this.permissions.verifier(action, role, permissions);
 
     const transition = TRANSITIONS[action].depuis[statutActuel];
     if (transition === undefined) {

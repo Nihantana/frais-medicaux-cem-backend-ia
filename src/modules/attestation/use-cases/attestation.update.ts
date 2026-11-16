@@ -121,8 +121,7 @@ export class UpdateAttestationUseCase {
         }
 
         const attestationData: AttestationData = {
-          // Keep the creation year so the reference remains stable.
-          reference: `${oldAttestation.datePEC.getFullYear()} - ${attestationId}`,
+          reference: oldAttestation.reference,
           image:
             beneficiary.carteProfessionnellePath ??
             beneficiary.carteSocialePath,

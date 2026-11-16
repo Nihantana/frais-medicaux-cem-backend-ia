@@ -42,6 +42,7 @@ export type UpdatePartialAttestation = {
 
 export type ReadAttestation = {
   id: number;
+  reference: string;
   attestationPath: string | null;
   dateValidation: Date | null;
   naturePrestation: string;

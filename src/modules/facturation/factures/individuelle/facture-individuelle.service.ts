@@ -34,13 +34,22 @@ import type {
   ModifierFactureIndividuelleDto,
   PropositionDepassementDto,
 } from '../../dtos/facture-individuelle.dto.js';
+import { VerificationFactureService } from '../../../verification-facture/verification-facture.service.js';
 
 export interface LigneFactureCalculee {
   id: number;
   numLigne: number;
   libelle: string;
   dateActe: string;
+  dateSaisie: string;
   idp: string;
+  nomPrenomBeneficiaire: string;
+  codeFam: 'AGT' | 'CJT' | 'EFT' | null;
+  obsIdp: string | null;
+  im: number | null;
+  nomPrenomAgent: string | null;
+  codeDirection: string | null;
+  categorieAgent: string | null;
   acte: { id: number; code: string; nom: string };
   montantActe: string;
   montantDepassementActe: string;
@@ -104,6 +113,7 @@ export class FactureIndividuelleService {
     private readonly mouvements: MouvementFactureService,
     private readonly suivi: SuiviService,
     private readonly workflow: FactureWorkflowService,
+    private readonly verification: VerificationFactureService,
     private readonly cloture: FactureClotureService = new FactureClotureService(),
   ) {}
 
@@ -112,7 +122,11 @@ export class FactureIndividuelleService {
     acteur: ActeurFacture,
     donnees: CreerFactureIndividuelleDto,
   ): Promise<LigneFactureCalculee> {
-    this.permissions.verifier(ActionFacture.SUIVI_CREER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_CREER,
+      acteur.role,
+      acteur.permissions,
+    );
     return this.avecRetryNumLigne(() =>
       this.prisma.$transaction((tx) =>
         this.creerDansTransaction(tx, idFacture, acteur, donnees),
@@ -126,7 +140,11 @@ export class FactureIndividuelleService {
     acteur: ActeurFacture,
     donnees: ModifierFactureIndividuelleDto,
   ): Promise<LigneFactureCalculee> {
-    this.permissions.verifier(ActionFacture.SUIVI_MODIFIER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_MODIFIER,
+      acteur.role,
+      acteur.permissions,
+    );
     return this.prisma.$transaction(async (tx) => {
       const ligne = await tx.factureIndividuelle.findFirst({
         where: { id: ligneId, factureGlobaleId: idFacture },
@@ -200,6 +218,16 @@ export class FactureIndividuelleService {
           montantDepassementActe: calcule.montantDepassementActe,
           montantDepassementPlafond: calcule.montantDepassementPlafond,
           observationDepassement: donnees.observationDepassement,
+          refPaie:
+            donnees.refPaie === undefined
+              ? undefined
+              : donnees.refPaie?.trim() || null,
+          moisAffectation:
+            donnees.moisAffectation === undefined
+              ? undefined
+              : donnees.moisAffectation === null
+                ? null
+                : convertirDate(donnees.moisAffectation),
           tauxCem: calcule.tauxCem,
           montantCemIntegral: calcule.montantCemIntegral,
           priseEnChargeId: donnees.numPec,
@@ -214,7 +242,11 @@ export class FactureIndividuelleService {
     ligneId: number,
     acteur: ActeurFacture,
   ): Promise<void> {
-    this.permissions.verifier(ActionFacture.SUIVI_SUPPRIMER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_SUPPRIMER,
+      acteur.role,
+      acteur.permissions,
+    );
     await this.prisma.$transaction(async (tx) => {
       const ligne = await tx.factureIndividuelle.findFirst({
         where: { id: ligneId, factureGlobaleId: idFacture },
@@ -243,7 +275,39 @@ export class FactureIndividuelleService {
     await this.obtenirFacture(idFacture);
     const lignes = await this.prisma.factureIndividuelle.findMany({
       where: { factureGlobaleId: idFacture },
-      include: { beneficiaire: true, acte: true },
+      include: {
+        acte: true,
+        beneficiaire: {
+          include: {
+            personne: {
+              include: {
+                agent: {
+                  include: {
+                    personne: true,
+                    service: true,
+                    structureOrganisationnelle: { include: { direction: true } },
+                    categorie: true,
+                  },
+                },
+                familleAgent: {
+                  include: {
+                    conjoint: true,
+                    enfant: true,
+                    agent: {
+                      include: {
+                        personne: true,
+                        service: true,
+                        structureOrganisationnelle: { include: { direction: true } },
+                        categorie: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { numLigne: 'asc' },
     });
     const resultat = await Promise.all(
@@ -335,7 +399,11 @@ export class FactureIndividuelleService {
     acteur: ActeurFacture,
     donnees: AffecterRetenueDto,
   ): Promise<{ ligneIds: number[]; refPaie: string }> {
-    this.permissions.verifier(ActionFacture.SUIVI_MODIFIER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_MODIFIER,
+      acteur.role,
+      acteur.permissions,
+    );
     if (donnees.ligneIds.length === 0)
       throw new BadRequestException(
         'Au moins une ligne doit être sélectionnée.',
@@ -512,6 +580,7 @@ export class FactureIndividuelleService {
     acteur: ActeurFacture,
     donnees: CreerFactureIndividuelleDto,
   ): Promise<LigneFactureCalculee> {
+    await this.verification.verifierT5Finalise(idFacture, tx);
     const contexte = await this.resoudreContexte(
       tx,
       idFacture,
@@ -545,10 +614,13 @@ export class FactureIndividuelleService {
         montantDepassementActe: calcule.montantDepassementActe,
         montantDepassementPlafond: calcule.montantDepassementPlafond,
         observationDepassement: donnees.observationDepassement,
+        refPaie: donnees.refPaie?.trim() || null,
         tauxCem: calcule.tauxCem,
         montantCemIntegral: calcule.montantCemIntegral,
         createdAt,
-        moisAffectation: null,
+        moisAffectation: donnees.moisAffectation
+          ? convertirDate(donnees.moisAffectation)
+          : null,
         priseEnChargeId: donnees.numPec ?? null,
       },
     });
@@ -780,9 +852,50 @@ export class FactureIndividuelleService {
   ): Promise<LigneFactureCalculee> {
     const ligne = await client.factureIndividuelle.findUniqueOrThrow({
       where: { id },
-      include: { beneficiaire: true },
+        include: {
+          beneficiaire: {
+            include: {
+              personne: {
+                include: {
+                  agent: {
+                    include: {
+                      personne: true,
+                      service: true,
+                      structureOrganisationnelle: { include: { direction: true } },
+                      categorie: true,
+                    },
+                  },
+                  familleAgent: {
+                    include: {
+                      conjoint: true,
+                      enfant: true,
+                      agent: {
+                        include: {
+                          personne: true,
+                          service: true,
+                          structureOrganisationnelle: { include: { direction: true } },
+                          categorie: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
     });
     const parts = this.calcul.calculerPartsLigne(calcule);
+    const personne = ligne.beneficiaire.personne;
+    const famille = personne?.familleAgent;
+    const agent = personne?.agent ?? famille?.agent;
+    const codeFam = personne?.agent
+      ? 'AGT'
+      : famille?.conjoint
+        ? 'CJT'
+        : famille?.enfant
+          ? 'EFT'
+          : null;
     const avertissements = [...contexte.avertissements];
     if (ligne.priseEnChargeId !== null) {
       const attestation = await client.attestation.findUnique({
@@ -859,7 +972,22 @@ export class FactureIndividuelleService {
       numLigne: ligne.numLigne,
       libelle: ligne.libelle,
       dateActe: ligne.dateActe.toISOString().slice(0, 10),
+      dateSaisie: ligne.createdAt?.toISOString() ?? new Date().toISOString(),
       idp: ligne.beneficiaire.idp,
+      nomPrenomBeneficiaire: personne
+        ? `${personne.nom} ${personne.prenom}`
+        : ligne.beneficiaire.idp,
+      codeFam,
+      obsIdp: ligne.beneficiaire.observationIDP,
+      im: agent?.matricule ?? null,
+      nomPrenomAgent: agent?.personne
+        ? `${agent.personne.nom} ${agent.personne.prenom}`
+        : null,
+      codeDirection:
+        agent?.service?.codeDirection ??
+        agent?.structureOrganisationnelle?.direction?.codeDirection ??
+        null,
+      categorieAgent: agent?.categorie?.codeCategory ?? null,
       acte: {
         id: contexte.acte.id,
         code: contexte.acte.code,

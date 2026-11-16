@@ -17,6 +17,38 @@ JSON appliquent une validation stricte : les propriétés inconnues sont refusé
 - Les routes de paie ne lisent que les lignes dont `moisAffectation` correspond
   au premier jour du mois et dont la facture est clôturée.
 
+## Contrôle visuel préalable
+
+Une facture est enregistrée avant son traitement, mais ses actes et ses lignes
+de suivi ne doivent être créés qu'après un contrôle visuel conforme confirmé par
+un utilisateur. Le contrôle est stocké séparément du statut de la facture dans
+`ControleVisuelFacture`; ses résultats détaillés sont conservés dans
+`ResultatControleFacture`.
+
+Les routes sont `POST /factures/:id/controle-visuel` pour lancer l'analyse,
+`GET /factures/:id/controle-visuel` pour consulter le dernier rapport,
+`POST /factures/:id/controle-visuel/confirmation` pour confirmer manuellement
+et `POST /factures/:id/controle-visuel/retour` pour retourner la facture au
+prestataire avec un motif obligatoire. Le lancement produit un rapport
+`ANOMALIE` lorsqu'une incohérence bloquante est détectée; sinon il reste
+`A_VERIFIER` jusqu'à la confirmation humaine.
+
+La création d'une ligne de facture et la création d'une ligne de suivi sont
+refusées avec `409` tant que le contrôle associé n'est pas `CONFORME`.
+
+Les attestations générées avant la prestation possèdent une `reference` unique
+et un `statutUtilisation`. Une pièce jointe retournée par le prestataire peut
+être rattachée à l'attestation correspondante. La référence et le rattachement
+servent à contrôler qu'une attestation correspond au bon acte, bénéficiaire et
+prestataire et qu'elle n'est pas réutilisée.
+
+Les libellés des actes extraits sont rapprochés des `naturePrestation` des
+attestations. Les correspondances exactes sont traitées par les règles locales ;
+les libellés différents utilisent le modèle d'embeddings Ollama configuré par
+`OLLAMA_EMBEDDING_MODEL` (par défaut `bge-m3:latest`). Une similarité
+intermédiaire produit `A_VERIFIER` et ne permet jamais une confirmation
+automatique.
+
 ## Repérage rapide des routes par entité
 
 Cette table indique l’entité principale concernée par chaque groupe de routes.
@@ -592,6 +624,9 @@ npx prisma generate
 
 Puis définir `ALLOW_DEMO_SEED=true` dans `.env` et lancer
 `npm run seed:facturation-demo`. Le seed refuse `NODE_ENV=production`.
+Il crée automatiquement le prestataire, le lieu et la catégorie de prestataire
+de démonstration s’ils n’existent pas, puis insère une facture T6 avec trois
+lignes, un bénéficiaire, ses attestations et l’historique d’enregistrement.
 
 ## Jeu de test
 

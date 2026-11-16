@@ -17,6 +17,7 @@ import type { ActeurFacture } from '../factures/globale/facture-globale.service.
 import { ActionFacture } from '../shared/action-facture.js';
 import { FacturePermissionsService } from '../shared/facture-permissions.service.js';
 import { FactureClotureService } from '../shared/facture-cloture.service.js';
+import { VerificationFactureService } from '../../verification-facture/verification-facture.service.js';
 import {
   SuiviCalculService,
   type LigneSuiviCalculee,
@@ -183,6 +184,7 @@ export class SuiviService {
     private readonly calcul: SuiviCalculService,
     private readonly permissions: FacturePermissionsService,
     private readonly plafondResolution: PlafondResolutionService,
+    private readonly verification: VerificationFactureService,
     private readonly cloture: FactureClotureService = new FactureClotureService(),
   ) {}
 
@@ -290,7 +292,12 @@ export class SuiviService {
     acteur: ActeurFacture,
     donnees: CreerLigneSuiviDto,
   ): Promise<FeuilleSuivi> {
-    this.permissions.verifier(ActionFacture.SUIVI_CREER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_CREER,
+      acteur.role,
+      acteur.permissions,
+    );
+    await this.verification.verifierTraitementAutorise(idFacture);
     const dateActe = this.convertirDate(donnees.dateActe);
     this.verifierDatePasDansLeFutur(dateActe);
     const contexte = await this.resoudreNouvelleLigne(
@@ -362,7 +369,11 @@ export class SuiviService {
   ): Promise<
     FeuilleSuivi | { ancienne: FeuilleSuivi; nouvelle: FeuilleSuivi }
   > {
-    this.permissions.verifier(ActionFacture.SUIVI_MODIFIER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_MODIFIER,
+      acteur.role,
+      acteur.permissions,
+    );
     if (Object.keys(donnees).length === 0)
       throw new BadRequestException('Au moins un champ doit être fourni.');
     const ligne = await this.prisma.ligneSuivi.findUnique({
@@ -431,7 +442,11 @@ export class SuiviService {
     ligneId: number,
     acteur: ActeurFacture,
   ): Promise<FeuilleSuivi> {
-    this.permissions.verifier(ActionFacture.SUIVI_SUPPRIMER, acteur.role);
+    this.permissions.verifier(
+      ActionFacture.SUIVI_SUPPRIMER,
+      acteur.role,
+      acteur.permissions,
+    );
     const ligne = await this.prisma.ligneSuivi.findUnique({
       where: { id: ligneId },
       include: { factureGlobale: true, beneficiaire: true },

@@ -6,6 +6,9 @@ export class AttestationResponseDto implements ReadAttestation {
   @ApiProperty()
   id!: number;
 
+  @ApiProperty()
+  reference!: string;
+
   @ApiProperty({ type: String, nullable: true })
   attestationPath!: string | null;
 

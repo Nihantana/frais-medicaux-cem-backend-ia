@@ -50,8 +50,21 @@ const validators = {
   }),
   STORAGE_CARTES_SOCIALES_DIR: dirName({ default: 'cartes-sociales' }),
 
+  TESSERACT_COMMAND: str({ default: 'tesseract' }),
+  OCR_LANGUAGE: str({ default: 'fra' }),
+  OLLAMA_BASE_URL: str({ default: 'http://localhost:11434' }),
+  OLLAMA_TEXT_MODEL: str({ default: 'qwen2.5-coder:3b' }),
+  OLLAMA_EMBEDDING_MODEL: str({ default: 'bge-m3:latest' }),
+  OLLAMA_TIMEOUT_MS: num({ default: 120000 }),
+
   TRANSACTION_MAX_WAIT: num({ default: 10000 }),
   TRANSACTION_TIMEOUT: num({ default: 10000 }),
+
+  KEYCLOAK_ISSUER_URL: str({ default: 'http://localhost:8080/realms/cem' }),
+  KEYCLOAK_AUDIENCE: str({ default: 'cem-frontend' }),
+  KEYCLOAK_JWKS_URL: str({
+    default: 'http://localhost:8080/realms/cem/protocol/openid-connect/certs',
+  }),
 };
 
 /** Converts envalid failures to application-specific startup errors. */

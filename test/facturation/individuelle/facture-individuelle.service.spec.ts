@@ -47,6 +47,10 @@ function creerService(statut: StatutFacture) {
     mouvements as unknown as MouvementFactureService,
     {} as SuiviService,
     new FactureWorkflowService(),
+    {
+      verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
+      verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
+    } as never,
   );
   return { service, tx, mouvements };
 }
@@ -95,6 +99,10 @@ function creerServiceControle(
     {} as MouvementFactureService,
     {} as SuiviService,
     new FactureWorkflowService(),
+    {
+      verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
+      verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
+    } as never,
   );
   return { service, tx };
 }

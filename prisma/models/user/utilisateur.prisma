@@ -1,24 +1,103 @@
 model Utilisateur {
-  id   Int            @id @default(autoincrement())
-  nom  String
-  role RoleUtilisateur
+  id           Int             @id @default(autoincrement())
+  nom          String
+  email        String?         @unique
+  oauthSubject String?         @unique @map("oauth_subject")
+  role         RoleUtilisateur
 
-  facturesEnregistrees FactureGlobale[]   @relation("FactureEnregistreePar")
-  facturesValidees     FactureGlobale[]   @relation("FactureValideePar")
-  mouvementsEffectues  MouvementFacture[] @relation("MouvementEffectuePar")
-  mouvementsRecus      MouvementFacture[] @relation("MouvementAdresseA")
-  lignesSuivi          LigneSuivi[]
-  piecesJointesAjoutees PieceJointeFacture[]
+  rolesAssignees            UtilisateurRole[]
+  permissionsPersonnalisees UtilisateurPermission[]
+  facturesEnregistrees      FactureGlobale[]        @relation("FactureEnregistreePar")
+  facturesValidees          FactureGlobale[]        @relation("FactureValideePar")
+  mouvementsEffectues       MouvementFacture[]      @relation("MouvementEffectuePar")
+  mouvementsRecus           MouvementFacture[]      @relation("MouvementAdresseA")
+  lignesSuivi               LigneSuivi[]
+  piecesJointesAjoutees     PieceJointeFacture[]
+  controlesVisuelsLances    ControleVisuelFacture[] @relation("ControleVisuelLancePar")
+  controlesVisuelsConfirmes ControleVisuelFacture[] @relation("ControleVisuelConfirmePar")
+  notifications            Notification[]
+  messagesDiscussion       MessageDiscussionFacture[]
 
   @@map("utilisateur")
   @@schema("utilisateur")
 }
 
 enum RoleUtilisateur {
-  OPERATEUR @map("operateur")
-  ADJOINT   @map("adjoint")
-  CHEF      @map("chef")
+  OPERATEUR      @map("operateur")
+  ADJOINT        @map("adjoint")
+  CHEF           @map("chef")
+  ADMINISTRATEUR @map("administrateur")
 
   @@map("role_utilisateur")
+  @@schema("utilisateur")
+}
+
+model Permission {
+  id                 Int                     @id @default(autoincrement())
+  code               String                  @unique
+  libelle            String
+  rolesParDefaut     RolePermission[]
+  personnalisations  UtilisateurPermission[]
+  rolesConfigurables RoleConfigPermission[]
+
+  @@map("permission")
+  @@schema("utilisateur")
+}
+
+model Role {
+  id           Int                    @id @default(autoincrement())
+  code         String                 @unique
+  libelle      String
+  systeme      Boolean                @default(false)
+  utilisateurs UtilisateurRole[]
+  permissions  RoleConfigPermission[]
+
+  @@map("role")
+  @@schema("utilisateur")
+}
+
+model UtilisateurRole {
+  utilisateurId Int         @map("utilisateur_id")
+  roleId        Int         @map("role_id")
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  role          Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([utilisateurId, roleId])
+  @@map("utilisateur_role")
+  @@schema("utilisateur")
+}
+
+model RoleConfigPermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  autorisee    Boolean    @default(true)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_config_permission")
+  @@schema("utilisateur")
+}
+
+model RolePermission {
+  role         RoleUtilisateur
+  permissionId Int             @map("permission_id")
+  autorisee    Boolean         @default(true)
+  permission   Permission      @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([role, permissionId])
+  @@map("role_permission")
+  @@schema("utilisateur")
+}
+
+model UtilisateurPermission {
+  utilisateurId Int         @map("utilisateur_id")
+  permissionId  Int         @map("permission_id")
+  autorisee     Boolean     @default(true)
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([utilisateurId, permissionId])
+  @@map("utilisateur_permission")
   @@schema("utilisateur")
 }

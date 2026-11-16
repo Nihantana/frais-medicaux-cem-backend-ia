@@ -13,7 +13,6 @@ import type {
 } from '../types/attestation.types.js';
 import {
   BackOfficeFrontOffice,
-  type CreateAttestation,
 } from '../types/attestation.types.js';
 import type { CreateAttestationUseCaseType } from '../types/attestation.use-case.types.js';
 import { AttestationPdfService } from '../services/attesatation-pdf.service.js';
@@ -35,7 +34,6 @@ export class SaveAttestationUseCase {
 
   async execute(input: CreateAttestationUseCaseType): Promise<void> {
     let attestationPath: string | null = null;
-    const actualYear = new Date().getFullYear();
 
     await this.prisma
       .$transaction(
@@ -106,7 +104,7 @@ export class SaveAttestationUseCase {
               },
               tx,
             );
-            const attestatonRef = `${actualYear} - ${newAttestation.id}`;
+            const attestatonRef = newAttestation.reference;
             const attestionData: AttestationData = {
               reference: attestatonRef,
               image:
@@ -152,7 +150,7 @@ export class SaveAttestationUseCase {
               },
               tx,
             );
-            const attestatonRef = `${actualYear} - ${newAttestation.id}`;
+            const attestatonRef = newAttestation.reference;
             const attestionData: AttestationData = {
               reference: attestatonRef,
               image:

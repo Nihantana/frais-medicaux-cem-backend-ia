@@ -13,6 +13,7 @@ model MouvementFacture {
   factureGlobale FactureGlobale @relation(fields: [factureGlobaleId], references: [id])
   effectuePar    Utilisateur    @relation("MouvementEffectuePar", fields: [effectueParId], references: [id])
   adresseA       Utilisateur?   @relation("MouvementAdresseA", fields: [adresseAId], references: [id])
+  notifications  Notification[]
 
   @@index([factureGlobaleId, date])
   @@map("mouvement_facture")

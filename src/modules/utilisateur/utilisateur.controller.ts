@@ -10,7 +10,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -30,7 +32,11 @@ import {
   CreerUtilisateurDto,
   ModifierUtilisateurDto,
 } from './dtos/utilisateur.dto.js';
+import { ModifierPermissionDto } from './dtos/permission.dto.js';
+import { CreerRoleDto, ModifierRoleDto } from './dtos/role.dto.js';
+import { AdministrateurGuard } from './guards/administrateur.guard.js';
 import { UtilisateurService } from './utilisateur.service.js';
+import { KeycloakAuthGuard } from '../auth/keycloak-auth.guard.js';
 
 const ROLES_VALIDES = Object.values(RoleUtilisateur);
 const VALIDATION_PAYLOAD = new ValidationPipe({
@@ -41,6 +47,7 @@ const VALIDATION_PAYLOAD = new ValidationPipe({
 
 @ApiTags('Utilisateurs')
 @Controller('utilisateurs')
+@UseGuards(KeycloakAuthGuard)
 export class UtilisateurController {
   constructor(private readonly utilisateurs: UtilisateurService) {}
 
@@ -53,6 +60,75 @@ export class UtilisateurController {
   })
   lister(@Query('role') role?: string): Promise<UtilisateurResponseDto[]> {
     return this.utilisateurs.lister(this.validerRoles(role));
+  }
+
+  @Get('permissions/catalogue')
+  @UseGuards(AdministrateurGuard)
+  @ApiOkResponse()
+  @ApiOperation({ summary: 'Lister le catalogue des permissions' })
+  cataloguePermissions() {
+    return this.utilisateurs.listerPermissions();
+  }
+
+  @Get('roles/catalogue')
+  @UseGuards(AdministrateurGuard)
+  @ApiOkResponse()
+  @ApiOperation({ summary: 'Lister les rôles configurables' })
+  catalogueRoles() {
+    return this.utilisateurs.listerRoles();
+  }
+
+  @Post('roles')
+  @UseGuards(AdministrateurGuard)
+  @UsePipes(VALIDATION_PAYLOAD)
+  creerRole(@Body() donnees: CreerRoleDto) {
+    return this.utilisateurs.creerRole(donnees);
+  }
+
+  @Patch('roles/:id')
+  @UseGuards(AdministrateurGuard)
+  @UsePipes(VALIDATION_PAYLOAD)
+  modifierRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() donnees: ModifierRoleDto,
+  ) {
+    return this.utilisateurs.modifierRole(id, donnees);
+  }
+
+  @Delete('roles/:id')
+  @UseGuards(AdministrateurGuard)
+  @HttpCode(HttpStatus.OK)
+  async supprimerRole(@Param('id', ParseIntPipe) id: number) {
+    await this.utilisateurs.supprimerRole(id);
+    return { message: 'Le rôle a été supprimé avec succès.' };
+  }
+
+  @Get('roles/:id/permissions')
+  @UseGuards(AdministrateurGuard)
+  permissionsRole(@Param('id', ParseIntPipe) id: number) {
+    return this.utilisateurs.obtenirPermissionsRole(id);
+  }
+
+  @Put('roles/:id/permissions/:code')
+  @UseGuards(AdministrateurGuard)
+  @UsePipes(VALIDATION_PAYLOAD)
+  modifierPermissionRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('code') code: string,
+    @Body() donnees: ModifierPermissionDto,
+  ) {
+    return this.utilisateurs.modifierPermissionRole(id, code, donnees.autorisee);
+  }
+
+  @Delete('roles/:id/permissions/:code')
+  @UseGuards(AdministrateurGuard)
+  @HttpCode(HttpStatus.OK)
+  async reinitialiserPermissionRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('code') code: string,
+  ) {
+    await this.utilisateurs.reinitialiserPermissionRole(id, code);
+    return { message: 'La permission par défaut du rôle a été restaurée.' };
   }
 
   @Get(':id')
@@ -68,6 +144,7 @@ export class UtilisateurController {
   }
 
   @Post()
+  @UseGuards(AdministrateurGuard)
   @ApiCreatedResponse({ type: UtilisateurReponseAvecMessageDto })
   @ApiOperation({
     summary: 'Créer un utilisateur',
@@ -85,6 +162,7 @@ export class UtilisateurController {
   }
 
   @Patch(':id')
+  @UseGuards(AdministrateurGuard)
   @ApiOkResponse({ type: UtilisateurReponseAvecMessageDto })
   @ApiOperation({
     summary: 'Modifier un utilisateur',
@@ -102,6 +180,7 @@ export class UtilisateurController {
   }
 
   @Delete(':id')
+  @UseGuards(AdministrateurGuard)
   @ApiOperation({
     summary: 'Supprimer un utilisateur',
     description:
@@ -114,6 +193,50 @@ export class UtilisateurController {
   ): Promise<MessageResponseDto> {
     await this.utilisateurs.supprimer(id);
     return { message: "L'utilisateur a été supprimé avec succès." };
+  }
+
+  @Get(':id/permissions')
+  @UseGuards(AdministrateurGuard)
+  @ApiOkResponse()
+  @ApiOperation({
+    summary: 'Lister les permissions effectives',
+    description:
+      'Retourne les permissions par défaut du rôle et les éventuelles exceptions.',
+  })
+  permissions(@Param('id', ParseIntPipe) id: number) {
+    return this.utilisateurs.obtenirPermissions(id);
+  }
+
+  @Put(':id/permissions/:code')
+  @UseGuards(AdministrateurGuard)
+  @UsePipes(VALIDATION_PAYLOAD)
+  @ApiOkResponse()
+  @ApiOperation({
+    summary: 'Définir une permission personnalisée',
+    description: 'Crée ou remplace une exception au rôle par défaut.',
+  })
+  modifierPermission(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('code') code: string,
+    @Body() donnees: ModifierPermissionDto,
+  ) {
+    return this.utilisateurs.modifierPermission(id, code, donnees.autorisee);
+  }
+
+  @Delete(':id/permissions/:code')
+  @UseGuards(AdministrateurGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: MessageResponseDto })
+  @ApiOperation({
+    summary: 'Réinitialiser une permission',
+    description: 'Supprime l’exception et restaure la valeur du rôle.',
+  })
+  async reinitialiserPermission(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('code') code: string,
+  ): Promise<MessageResponseDto> {
+    await this.utilisateurs.reinitialiserPermission(id, code);
+    return { message: 'La permission par défaut a été restaurée.' };
   }
 
   private validerRoles(role?: string): RoleUtilisateur[] | undefined {

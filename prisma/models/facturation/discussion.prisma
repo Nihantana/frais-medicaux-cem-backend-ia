@@ -1,0 +1,27 @@
+model DiscussionFacture {
+  id               Int      @id @default(autoincrement())
+  factureGlobaleId Int      @unique @map("facture_globale_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  factureGlobale FactureGlobale              @relation(fields: [factureGlobaleId], references: [id], onDelete: Cascade)
+  messages      MessageDiscussionFacture[]
+
+  @@map("discussion_facture")
+  @@schema("facturation")
+}
+
+model MessageDiscussionFacture {
+  id           Int      @id @default(autoincrement())
+  discussionId Int      @map("discussion_id")
+  auteurId     Int      @map("auteur_id")
+  contenu      String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  discussion DiscussionFacture @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  auteur     Utilisateur       @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId, createdAt])
+  @@map("message_discussion_facture")
+  @@schema("facturation")
+}

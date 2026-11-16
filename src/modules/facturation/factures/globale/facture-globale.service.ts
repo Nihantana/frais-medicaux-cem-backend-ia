@@ -154,6 +154,7 @@ export type FactureDetailleeAvecMouvements = FactureWorkflowLue & {
 export interface ActeurFacture {
   id: number;
   role: RoleUtilisateur;
+  permissions?: readonly string[];
 }
 
 export interface OptionsActionFacture {
@@ -472,6 +473,8 @@ export class FactureGlobaleService {
         factureAvantControle.statut,
         ActionFacture.ENVOI_VALIDATION,
         acteur.role,
+        undefined,
+        acteur.permissions,
       );
       await this.factureIndividuelleService.verifierAvantValidation(tx, id);
       const destinataire =
@@ -527,6 +530,8 @@ export class FactureGlobaleService {
         factureAvantControle.statut,
         ActionFacture.VALIDATION,
         acteur.role,
+        undefined,
+        acteur.permissions,
       );
       await this.factureIndividuelleService.verifierAvantValidation(tx, id);
       return this.effectuerTransitionDansTransaction(
@@ -700,10 +705,19 @@ export class FactureGlobaleService {
     return this.prisma.$transaction(async (tx) => {
       const facture = await this.obtenirDansTransaction(tx, id);
       this.cloture.verifierNonCloturee(facture.dateCloture);
+      const dateRetourAction =
+        donnees.dateRetourAction === undefined
+          ? undefined
+          : convertirDateIso(donnees.dateRetourAction);
+      if (dateRetourAction !== undefined && Number.isNaN(dateRetourAction.getTime())) {
+        throw new BadRequestException('La date de réception après modification est invalide.');
+      }
       const statutSuivant = this.factureWorkflowService.determinerTransition(
         facture.statut,
         ActionFacture.MODIFIER_INFORMATIONS,
         acteur.role,
+        undefined,
+        acteur.permissions,
       );
       const data: Prisma.FactureGlobaleUncheckedUpdateManyInput = {};
       const changements: ChampModifie[] = [];
@@ -886,6 +900,7 @@ export class FactureGlobaleService {
         data,
         changements,
         donnees.motif,
+        dateRetourAction,
       );
       return parts === undefined
         ? factureModifiee
@@ -944,6 +959,7 @@ export class FactureGlobaleService {
       action,
       acteur.role,
       statutSuivantDynamique,
+      acteur.permissions,
     );
     const miseAJour = await tx.factureGlobale.updateMany({
       where: { id, statut: facture.statut, updatedAt: facture.updatedAt },
@@ -973,8 +989,9 @@ export class FactureGlobaleService {
     data: Prisma.FactureGlobaleUncheckedUpdateManyInput,
     changements: ChampModifie[],
     motif?: string,
+    dateRetourAction?: Date,
   ): Promise<FactureWorkflowLue> {
-    if (changements.length === 0) {
+    if (changements.length === 0 && dateRetourAction === undefined) {
       throw new BadRequestException(
         'La modification demandée ne change aucune valeur de la facture.',
       );
@@ -1000,12 +1017,22 @@ export class FactureGlobaleService {
     const remarque = [motif?.trim(), ...changements.map(formaterChangement)]
       .filter((element): element is string => element !== undefined)
       .join('\n');
-    await this.mouvementFactureService.ecrire(tx, {
-      factureGlobaleId: facture.id,
-      type: TypeMouvement.MODIFICATION,
-      effectueParId: acteur.id,
-      remarque,
-    });
+    if (changements.length > 0) {
+      await this.mouvementFactureService.ecrire(tx, {
+        factureGlobaleId: facture.id,
+        type: TypeMouvement.MODIFICATION,
+        effectueParId: acteur.id,
+        remarque,
+      });
+    }
+    if (dateRetourAction !== undefined) {
+      await this.mouvementFactureService.ecrire(tx, {
+        factureGlobaleId: facture.id,
+        type: TypeMouvement.RECEPTION_APRES_MODIFICATION,
+        effectueParId: acteur.id,
+        date: dateRetourAction,
+      });
+    }
 
     return this.obtenirApresMiseAJour(tx, facture.id);
   }
