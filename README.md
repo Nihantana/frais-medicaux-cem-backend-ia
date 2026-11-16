@@ -40,8 +40,9 @@ npm run start:dev
 
 Adapter `.env` à l'instance PostgreSQL et Keycloak utilisée. L'API écoute sur
 le port `3000` par défaut (variable `PORT`) et publie Swagger sur `/docs`,
-ainsi que le document OpenAPI sur `/docs-json`. Tesseract et Ollama sont
-nécessaires uniquement aux fonctions de contrôle visuel assisté.
+ainsi que le document OpenAPI sur `/docs-json`. Tesseract est utilisé pour
+l'OCR; Ollama est utilisé par le contrôle visuel, le rapprochement sémantique
+et l'assistant global.
 
 Scripts de vérification :
 
@@ -90,10 +91,26 @@ préfixes sont :
 | Factures                 | `/factures`                  |
 | États de paie            | `/paies`                     |
 | Assistant global         | `/assistant`                 |
+| Audit et sessions        | `/audit`                     |
 | Utilisateurs             | `/utilisateurs`              |
 
 Les anciens préfixes et chemins d'action ne sont plus exposés. Les clients API
 doivent utiliser les préfixes et les chemins normalisés ci-dessus.
+
+### Audit et sessions
+
+Les routes `/audit/actions`, `/audit/actions/stream` (SSE) et
+`/audit/sessions` sont réservées aux administrateurs. Les mutations authentifiées
+(`POST`, `PUT`, `PATCH`, `DELETE`) sont journalisées sans corps ni paramètres
+de requête. Le flux temps réel diffuse les actions finalisées; la page se
+reconnecte et recharge les données en cas d'interruption. Les événements SSE
+sont locaux au processus backend : plusieurs instances exigent un mécanisme de
+diffusion partagé.
+
+La consultation des sessions utilise le compte de service Keycloak défini par
+`KEYCLOAK_ADMIN_CLIENT_ID` et `KEYCLOAK_ADMIN_CLIENT_SECRET`. Dans le realm,
+associer au client le scope client `kc-admin-api` et les rôles
+`realm-management` nécessaires (`query-clients`, `view-clients`, `view-users`).
 
 ### Données de démonstration et référentiels
 

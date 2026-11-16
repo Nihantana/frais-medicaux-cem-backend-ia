@@ -57,6 +57,24 @@ contextuel d'une facture par `POST /factures/:id/controle-visuel/assistant`.
 Ils répondent aux questions, mais ne changent pas le statut ni ne confirment le
 contrôle.
 
+Pour l'assistant global, `AssistantGlobalService` répond directement aux
+salutations simples sans interroger la base ni Ollama. Les questions générales
+reçoivent des agrégats sur toute la base (y compris les factures `SUPPRIMEE`)
+et au plus 10 factures récentes; les
+questions comportant un numéro ou une référence sociale ciblent une facture.
+Si plusieurs résultats correspondent, l'assistant demande une référence plus
+précise. Le contexte cible contient au plus 20 lignes T6 et 10 mouvements. Une
+question d'historique sans référence demande d'abord le numéro ou la référence
+sociale.
+
+La documentation métier est sélectionnée par mots-clés dans
+`assistant-facture.documentation.ts`; elle n'utilise pas encore de recherche
+vectorielle. Les factures récentes sont un échantillon, jamais une liste
+exhaustive; les questions de comptage doivent utiliser les agrégats exacts.
+Le texte est généré par Ollama avec `OLLAMA_TEXT_MODEL` (par défaut
+`qwen2.5-coder:3b`), configurable indépendamment du modèle d'embeddings
+`OLLAMA_EMBEDDING_MODEL`. La taille de contexte se règle dans Ollama.
+
 ## Repérage rapide des routes par entité
 
 Cette table indique l’entité principale concernée par chaque groupe de routes.

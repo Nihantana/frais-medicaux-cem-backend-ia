@@ -1,10 +1,12 @@
 private-data
+FRM_BACKEND_IA/dist-seed-jeu-test-ia
 test
 
 # compiled output
 /dist
 /dist-demo
 /dist-seed-facturation
+/dist-seed-jeu-test-ia
 /node_modules
 /build
 /test

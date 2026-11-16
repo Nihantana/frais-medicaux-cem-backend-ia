@@ -65,6 +65,8 @@ const validators = {
   KEYCLOAK_JWKS_URL: str({
     default: 'http://localhost:8080/realms/cem/protocol/openid-connect/certs',
   }),
+  KEYCLOAK_ADMIN_CLIENT_ID: str({ default: '' }),
+  KEYCLOAK_ADMIN_CLIENT_SECRET: str({ default: '' }),
 };
 
 /** Converts envalid failures to application-specific startup errors. */

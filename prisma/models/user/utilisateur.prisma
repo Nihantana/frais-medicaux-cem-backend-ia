@@ -22,6 +22,25 @@ model Utilisateur {
   @@schema("utilisateur")
 }
 
+model JournalAction {
+  id              Int       @id @default(autoincrement())
+  utilisateurId   Int       @map("utilisateur_id")
+  utilisateurNom  String    @map("utilisateur_nom")
+  utilisateurEmail String?  @map("utilisateur_email")
+  methode         String
+  route           String
+  cibleId         String?   @map("cible_id")
+  statutHttp      Int?      @map("statut_http")
+  resultat        String    @default("EN_COURS")
+  creeLe          DateTime  @default(now()) @map("cree_le") @db.Timestamp(3)
+  termineLe       DateTime? @map("termine_le") @db.Timestamp(3)
+
+  @@index([creeLe(sort: Desc)])
+  @@index([utilisateurId, creeLe(sort: Desc)])
+  @@map("journal_action")
+  @@schema("utilisateur")
+}
+
 enum RoleUtilisateur {
   OPERATEUR      @map("operateur")
   ADJOINT        @map("adjoint")

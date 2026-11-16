@@ -17,6 +17,7 @@ import { ProviderModule } from './modules/provider/provider.module.js';
 import { FacturationModule } from './modules/facturation/facturation.module.js';
 import { UtilisateurModule } from './modules/utilisateur/utilisateur.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
     FacturationModule,
     UtilisateurModule,
     AuthModule,
+    AuditModule,
   ],
 })
 export class AppModule {}
