@@ -4,6 +4,9 @@ Documentation des routes exposées par `FacturationModule` et `UtilisateurModule
 Les exemples ci-dessous utilisent `http://localhost:3000`. Les montants calculés
 sont retournés en chaînes décimales à deux chiffres (`"1250.00"`). Les corps
 JSON appliquent une validation stricte : les propriétés inconnues sont refusées.
+Pour l'installation et les commandes disponibles, voir
+[`README.md`](./README.md). Le contrat HTTP généré par le backend est consultable
+sur `/docs-json`; vérifier celui-ci si une route ou un DTO a changé.
 
 ## Conventions
 
@@ -49,6 +52,11 @@ les libellés différents utilisent le modèle d'embeddings Ollama configuré pa
 intermédiaire produit `A_VERIFIER` et ne permet jamais une confirmation
 automatique.
 
+L'assistant global est exposé par `POST /assistant/question`; l'assistant
+contextuel d'une facture par `POST /factures/:id/controle-visuel/assistant`.
+Ils répondent aux questions, mais ne changent pas le statut ni ne confirment le
+contrôle.
+
 ## Repérage rapide des routes par entité
 
 Cette table indique l’entité principale concernée par chaque groupe de routes.
@@ -61,7 +69,7 @@ Certaines routes sont transversales et apparaissent donc sous plusieurs entités
 | Actes et catégories d’acte          | `GET /suivis/cibles` retourne les actes et catégories nécessitant un suivi à la date demandée. `GET /suivis` consulte le suivi pour un acte et un bénéficiaire. Gestion des actes : `/actes`; gestion des catégories : `/categories-actes`.      |
 | Suivi des plafonds (T5_x)           | `POST /factures/:id/suivis`, `GET /suivis/cibles`, `GET /suivis`, `PATCH /suivis/lignes/:ligneId`, `DELETE /suivis/lignes/:ligneId`                                                                                                              |
 | Pièces jointes de facture           | `POST`, `GET` sur `/factures/:id/pieces-jointes`, `GET /factures/:id/pieces-jointes/:pieceId`, `DELETE /factures/:id/pieces-jointes/:pieceId`                                                                                                    |
-| Paie (factures et lignes clôturées) | `POST /paies/:mois/cloture`, `GET /paies`, `GET /paies/:mois/lignes`, `GET /paies/:mois/consommation`, `GET /paies/:mois/etat`, `GET /paies/:mois/agents/:im`                                                                                    |
+| Paie (factures et lignes clôturées) | `POST /factures/:id/cloture`, `GET /paies`, `GET /paies/:mois/lignes`, `GET /paies/:mois/consommation`, `GET /paies/:mois/etat`, `GET /paies/:mois/agents/:im`                                                                                           |
 | Utilisateur                         | `GET /utilisateurs`, `GET /utilisateurs/:id`, `POST /utilisateurs`, `PATCH /utilisateurs/:id`, `DELETE /utilisateurs/:id`                                                                                                                        |
 
 > **Cibles de suivi :** la route actuellement exposée est `GET /suivis/cibles`,
@@ -289,7 +297,7 @@ facture; `409` si verrouillée.
 
 ### `GET /factures/:id/lignes`
 
-Réponse `200` :
+Réponse `201` :
 
 ```json
 {
@@ -374,19 +382,19 @@ Réponse `200` :
 La clôture affecte un mois de paie aux factures et lignes; les routes de
 consultation lisent ensuite ces données clôturées.
 
-### `POST /paies/:mois/cloture`
+### `POST /factures/:id/cloture`
 
-`mois` doit être `AAAA-MM`. Toutes les factures doivent exister, ne pas être
-supprimées ni clôturées, et avoir un rapprochement `CONFORME`.
+La clôture concerne une facture par requête. Le corps fournit le mois
+d'affectation (`AAAA-MM`) et la date métier de clôture (`AAAA-MM-JJ`).
 
 ```json
 {
-  "dateCloture": "2026-03-31",
-  "factureIds": [41, 42]
+  "moisAffectation": "2026-03",
+  "dateCloture": "2026-03-31"
 }
 ```
 
-Réponse `200` :
+Réponse `201` :
 
 ```json
 {
@@ -403,10 +411,10 @@ Réponse `200` :
 }
 ```
 
-La réponse `409` contient un tableau `[{factureId, refSociale, raison}]`;
-pour un `ECART`, l'élément fournit aussi `detail` (champ, montant facture,
-total lignes, écart). La transaction est annulée si une facture échoue ou en
-cas de conflit concurrent.
+La clôture met à jour la facture et ses lignes dans une transaction et ajoute
+un mouvement `CLOTURE`. Une facture supprimée ou déjà clôturée renvoie `409`;
+une facture absente renvoie `404`. La clôture ne peut pas être annulée par
+l'API.
 
 ### `GET /paies`
 
@@ -417,7 +425,7 @@ Réponse `200`: tableau de mois clôturés, du plus récent au plus ancien :
 
 Filtres facultatifs : `page` (défaut 1), `limite` (défaut 50, maximum 200),
 `im`, `prestataireId`, `factureId`, `direction`.
-Réponse `200` :
+Réponse `201` :
 
 ```json
 {
@@ -572,7 +580,8 @@ ne permet pas la suppression.
 ## Utilisateurs
 
 Les routes `/utilisateurs` appartiennent au module transversal
-`UtilisateurModule`; les rôles disponibles sont `OPERATEUR`, `ADJOINT`, `CHEF`.
+`UtilisateurModule`; le filtre `role` accepte les valeurs de l'enum historique :
+`OPERATEUR`, `ADJOINT`, `CHEF` et `ADMINISTRATEUR`.
 
 ### `GET /utilisateurs?role=ADJOINT,CHEF`
 
@@ -628,21 +637,17 @@ Il crée automatiquement le prestataire, le lieu et la catégorie de prestataire
 de démonstration s’ils n’existent pas, puis insère une facture T6 avec trois
 lignes, un bénéficiaire, ses attestations et l’historique d’enregistrement.
 
-## Jeu de test
+## Jeu de données de suivi T5
 
-Le seed `seed:jeu-test` prépare un jeu cohérent de factures, bénéficiaires,
-plafonds et lignes de suivi T5/T6 avec des statuts de démonstration. Il est
-idempotent et nettoie uniquement ses données préfixées `DEMO-JEU-TEST-` lorsqu'il
-est lancé avec `--clean`. Définir `ALLOW_DEMO_SEED=true` dans `.env`; le seed
-refuse `NODE_ENV=production`. Les règles métier doivent déjà être configurées.
+Le seed `seed:demo-suivi` prépare les scénarios de démonstration du suivi des
+plafonds. Définir `ALLOW_DEMO_SEED=true` dans `.env`; il refuse
+`NODE_ENV=production`.
 
-```bash
-ALLOW_DEMO_SEED=true npm run seed:jeu-test
-ALLOW_DEMO_SEED=true npm run seed:jeu-test -- --clean
-curl -s "http://localhost:3000/factures?statut=VALIDEE" | jq .
+```powershell
+npm run seed:demo-suivi
 ```
 
 En développement, `FACTURATION_UTILISATEUR_TEST_ID` sélectionne le compte
-utilisé lorsque l'authentification ne fournit pas d'utilisateur; les IDs
-`9001`, `9002` et `9003` correspondent à l'opérateur, l'adjoint et le chef de
-démo.
+utilisé lorsque l'authentification ne fournit pas d'utilisateur. Les IDs
+`9001`, `9002` et `9003` du seed de facturation correspondent à l'opérateur,
+l'adjoint et le chef de démonstration.

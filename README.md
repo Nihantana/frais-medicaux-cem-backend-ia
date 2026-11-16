@@ -1,100 +1,111 @@
-# CEM Medical Expenses - Backend
+# Backend — Frais médicaux CEM
 
-## Description
+API de gestion des frais médicaux de la Caisse d'Épargne de Madagascar. Elle
+fournit les référentiels, règles de prise en charge, factures, suivis T5/T6,
+contrôle visuel et états de paie. Le frontend associé est dans
+`../FRM_FRONTEND_IA`.
 
-```text
-A billing tracking system for employees of the Caisse d'Epargne de Madagascar.
-The system manages employees, providers, beneficiaries, medical coverage, and invoices on behalf of CEM.
-```
+### Technologies
 
-### Stack
-
-The backend is built with:
-
-- Nest.JS
+- NestJS
 - Prisma
 - PostgreSQL
 
 ### Structure du projet
 
-├── package-lock.json
-├── package.json
-├── prisma
-├── prisma7.config.ts
-├── src
-│ └──
-├── tsconfig.build.json
-├── tsconfig.build.tsbuildinfo
-├── tsconfig.json
-├── vitest.config.e2e.ts
-└── vitest.config.ts
+```text
+FRM_BACKEND_IA/
+├── prisma/                 # schéma, modèles par domaine et migrations
+├── private-data/           # données SQL de référence non publiques
+├── scripts/                # seeds de démonstration
+├── src/
+│   ├── common/             # configuration et comportements transverses
+│   ├── infrastructure/     # Prisma et stockage de fichiers
+│   └── modules/            # authentification et domaines métier
+└── test/                   # tests unitaires, d'intégration et e2e
+```
 
-### Source Code and API Conventions
+### Démarrage local
 
-- Business logic is grouped by feature under `src/modules/<module>`.
-- Repositories are located in `repositories/`, use cases in `use-cases/`,
-  DTOs in `dtos/`, and module types in `types/`.
-- Directory names use kebab-case. Controllers expose plural collections and
-  kebab-case paths.
-- Handlers use the verbs `create`, `find`, `search`, `update`,
-  `requestDeletion`, `validateDeletion`, and `rejectDeletion` as appropriate.
-- Function and method names use camelCase, with consistent resource lookup
-  names such as `findAll`, `findById`, and `findDeletionRequests`.
-- Shared module contracts (for example `Create...`, `Update...`, and `Read...`)
-  live in the module's `types/` directory. Prisma query payloads and
-  repository-only input shapes stay local to the repository that uses them.
-- Controllers document every data-bearing response with a response DTO and an
-  explicit Swagger response decorator. Response DTOs describe the existing
-  use-case/service output; they do not replace or move business types out of
-  `types/`, nor transform the response at runtime. Endpoints returning files
-  document their binary response in Swagger instead of using a JSON DTO.
-- Swagger UI is available at `/docs` and the OpenAPI document at `/docs-json`.
-  Frontend clients should generate their API response types from that document
-  rather than redeclaring backend response shapes (for example, with
-  `openapi-typescript <backend-url>/docs-json -o src/api/schema.d.ts`).
-- Deletion requests can be listed at `GET /<collection>/deletion-requests`.
-  A request uses `DELETE /<collection>/:id`; validation and rejection use
-  `POST /<collection>/:id/deletion-validation` and
-  `POST /<collection>/:id/deletion-rejection`.
+Prérequis : Node.js, PostgreSQL, et Keycloak pour les routes authentifiées.
+Depuis ce dossier, préparer la configuration locale puis démarrer l'API :
 
-Routes were renamed without compatibility aliases. The main prefixes are:
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run start:dev
+```
+
+Adapter `.env` à l'instance PostgreSQL et Keycloak utilisée. L'API écoute sur
+le port `3000` par défaut (variable `PORT`) et publie Swagger sur `/docs`,
+ainsi que le document OpenAPI sur `/docs-json`. Tesseract et Ollama sont
+nécessaires uniquement aux fonctions de contrôle visuel assisté.
+
+Scripts de vérification :
+
+```powershell
+npm run build
+npm test
+npm run test:e2e
+npm run lint
+```
+
+### Conventions du code et de l'API
+
+- La logique métier est regroupée par domaine sous `src/modules/<module>`.
+- Les dossiers `repositories/`, `use-cases/`, `dtos/` et `types/` organisent
+  les accès aux données, cas d'usage, contrats HTTP et types de module.
+- Les noms de dossiers et chemins HTTP utilisent le kebab-case; les noms de
+  méthodes utilisent le camelCase.
+- Les contrats partagés d'un module restent dans ses types. Les formes propres
+  aux requêtes Prisma restent locales au dépôt qui les utilise.
+- Les contrôleurs décrivent les réponses dans Swagger; les routes de fichiers
+  documentent leur réponse binaire au lieu d'un DTO JSON.
+- L'interface Swagger est disponible sur `/docs`, et le document OpenAPI sur
+  `/docs-json`. Le frontend génère ses types avec `npm run api:types` dans
+  `FRM_FRONTEND_IA`.
+- Pour les demandes de suppression, consulter les routes de chaque contrôleur;
+  les opérations usuelles sont `DELETE /<collection>/:id` puis les actions de
+  validation ou de rejet.
+
+Les routes ont été renommées sans alias de compatibilité. Les principaux
+préfixes sont :
 
 | Resource                  | Prefix                       |
 | ------------------------- | ---------------------------- |
-| Agents                    | `/agents`                    |
-| Agent categories          | `/agent-categories`          |
-| Agent families            | `/agent-families`            |
-| Attestations              | `/attestations`              |
-| Beneficiaries             | `/beneficiaries`             |
-| Acts                      | `/actes`                     |
-| Act categories            | `/categories-actes`          |
-| Ceilings                  | `/plafonds`                  |
-| Providers                 | `/providers`                 |
-| Provider categories       | `/provider-categories`       |
-| Locations                 | `/locations`                 |
-| Organizational structures | `/organizational-structures` |
-| Users                     | `/utilisateurs`              |
+| Agents                   | `/agents`                    |
+| Catégories d'agents      | `/agent-categories`          |
+| Familles d'agents        | `/agent-families`            |
+| Attestations             | `/attestations`              |
+| Bénéficiaires            | `/beneficiaries`             |
+| Actes                    | `/actes`                     |
+| Catégories d'actes       | `/categories-actes`          |
+| Plafonds                 | `/plafonds`                  |
+| Prestataires             | `/providers`                 |
+| Catégories de prestataire| `/provider-categories`       |
+| Lieux                    | `/locations`                 |
+| Structures organisationnelles | `/organizational-structures` |
+| Factures                 | `/factures`                  |
+| États de paie            | `/paies`                     |
+| Assistant global         | `/assistant`                 |
+| Utilisateurs             | `/utilisateurs`              |
 
-The old prefixes and action paths are no longer served. API clients must
-migrate to these prefixes and the standardized paths listed above.
+Les anciens préfixes et chemins d'action ne sont plus exposés. Les clients API
+doivent utiliser les préfixes et les chemins normalisés ci-dessus.
 
-### Seed initial medical acts
+### Données de démonstration et référentiels
 
-After configuring the database connection in `.env`, apply migrations and seed
-the initial categories, acts, and act-level ceilings from the supplied list:
+Le dépôt ne configure pas de commande `prisma db seed`. Les seeds disponibles
+sont `npm run seed:facturation-demo` et `npm run seed:demo-suivi`; ils sont
+réservés aux environnements hors production et exigent
+`ALLOW_DEMO_SEED=true`. Leur usage détaillé figure dans
+[`README-FACTURATION.md`](./README-FACTURATION.md).
 
-```sh
-npx prisma migrate deploy
-npx prisma generate
-npm run build
-npx prisma db seed
-```
-
-The seed is safe to rerun: categories, acts, and ceilings are upserted by their
-IDs, codes, and owner/scope respectively. Category IDs are taken from the
-numbered sections in the source list (for example, `01` is ID `1`, and the
-category name is `CONSULTATIONS MÉDICALES`). The workbook contains no
-category-wide ceilings, so the seeder does not create any.
+Le fichier `private-data/actes-et-plafonds.sql` contient des données de
+référence. Il ne fait pas partie des migrations et ne doit être appliqué
+qu'après vérification de son contenu et de la base cible.
 
 Actes, catégories d'actes et plafonds sont gérés respectivement par
 `/actes`, `/categories-actes` et `/plafonds`, avec les opérations CRUD.
@@ -109,8 +120,8 @@ disponibles.
 ### Organisation du module Facturation
 
 `src/modules/facturation/facturation.module.ts` compose les modules
-fonctionnels `FacturesModule`, `SuiviModule` et `PiecesJointesModule`; chacun
-déclare les contrôleurs de sa fonctionnalité.
+fonctionnels des factures, du suivi, des pièces jointes, du contrôle visuel,
+des notifications et des discussions.
 `FacturationCoreModule` regroupe les services métier
 partagés et leurs dépendances Nest (`PrismaModule`, `PlafondModule`,
 `ReglesPriseEnChargeModule` et `StorageModule`). Les noms de fichiers suivent
@@ -126,8 +137,9 @@ Les actions de workflow passent par `PATCH /factures/:id/statut`, avec un
 les actions disponibles et leurs champs requis. `GET /factures/:id/mouvements`
 renvoie l’historique (filtrable par `type`) dans l’ordre de création; la date
 du mouvement est métier et `createdAt` est son horodatage technique.
-Les dix routes d’action `POST` et `GET /factures/:id/historique` restent
-disponibles mais sont dépréciées. `GET /utilisateurs?role=ADJOINT,CHEF` fournit
+Les anciennes routes d’action `POST` et `GET /factures/:id/historique` ne sont
+pas exposées; utiliser `PATCH /factures/:id/statut` et
+`GET /factures/:id/mouvements`. `GET /utilisateurs?role=ADJOINT,CHEF` fournit
 les valideurs disponibles. Les dates d’action sont limitées à la date
 d’enregistrement de la facture et à aujourd’hui.
 
@@ -172,13 +184,12 @@ de la facture. L’envoi en validation et la validation exigent des totaux
 concordants. Tout écart ou toute facture sans ligne bloque l’envoi en validation
 et la validation.
 
-### Clôture mensuelle et états de paie
+### Clôture et états de paie
 
-`POST /paies/:mois/cloture` clôture atomiquement une liste non vide de factures
-conformes pour un mois au format `AAAA-MM`. La date métier est fournie dans
-`dateCloture` (`AAAA-MM-JJ`); la clôture affecte le mois aux factures et à leurs
-lignes T6 et ajoute un mouvement `CLOTURE`. Une facture déjà clôturée ne peut
-pas être réouverte par l'API.
+`POST /factures/:id/cloture` clôture une facture par requête. Le corps contient
+`moisAffectation` (`AAAA-MM`) et `dateCloture` (`AAAA-MM-JJ`). La clôture
+affecte le mois à la facture et à ses lignes T6, puis ajoute un mouvement
+`CLOTURE`. Une facture déjà clôturée ne peut pas être réouverte par l'API.
 
 Les routes `GET /paies`, `GET /paies/:mois/lignes`,
 `GET /paies/:mois/consommation`, `GET /paies/:mois/etat` et
