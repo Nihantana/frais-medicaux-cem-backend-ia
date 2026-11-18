@@ -6,6 +6,7 @@ export interface UtilisateurAuthentifie {
   email: string;
   role: RoleUtilisateur;
   roles: string[];
+  hasPhoto: boolean;
 }
 
 export interface RequeteAuthentifiee {

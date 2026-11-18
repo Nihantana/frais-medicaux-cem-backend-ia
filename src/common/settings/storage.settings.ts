@@ -5,6 +5,7 @@ export const IMAGE_CATEGORIES = [
   'carteProfessionnelle',
   'carteSociale',
   'factures',
+  'profile',
 ] as const;
 export type ImageCategory = (typeof IMAGE_CATEGORIES)[number];
 
@@ -20,6 +21,7 @@ export const STORAGE_SETTINGS = {
     carteProfessionnelle: env.STORAGE_CARTES_PROFESSIONNELLES_DIR,
     carteSociale: env.STORAGE_CARTES_SOCIALES_DIR,
     factures: 'factures',
+    profile: 'profiles',
   } satisfies Record<ImageCategory, string>,
   pdfDirs: {
     attestation: env.STORAGE_PDF_ATTESTATION_DIR,

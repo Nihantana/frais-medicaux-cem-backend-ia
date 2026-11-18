@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "seed:demo-suivi": "tsc -p tsconfig.demo.json && node dist-demo/scripts/seed-demo-suivi.js",
     "seed:facturation-demo": "tsc -p tsconfig.seed-facturation.json && node dist-seed-facturation/scripts/seed-facturation-demo.js",
+    "seed:soutenance": "tsc -p tsconfig.seed-soutenance.json && node dist-seed-soutenance/scripts/seed-soutenance.js",
     "seed:jeu-test-ia": "tsc -p tsconfig.seed-jeu-test-ia.json && node dist-seed-jeu-test-ia/scripts/seed-jeu-test-ia.js"
   },
   "dependencies": {

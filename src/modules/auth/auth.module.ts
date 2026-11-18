@@ -6,11 +6,14 @@ import { KeycloakAuthService } from './keycloak-auth.service.js';
 import { AuthorizationService } from './authorization.service.js';
 import { PermissionsGuard } from './permissions.guard.js';
 import { RolesGuard } from './roles.guard.js';
+import { StorageModule } from '../../infrastructure/storage/storage.module.js';
+import { ProfileService } from './profile.service.js';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, StorageModule],
   controllers: [AuthController],
   providers: [
+    ProfileService,
     KeycloakAuthService,
     KeycloakAuthGuard,
     AuthorizationService,
