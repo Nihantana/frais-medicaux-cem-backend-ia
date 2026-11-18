@@ -315,7 +315,7 @@ facture; `409` si verrouillée.
 
 ### `GET /factures/:id/lignes`
 
-Réponse `201` :
+Réponse `200` :
 
 ```json
 {
@@ -443,7 +443,7 @@ Réponse `200`: tableau de mois clôturés, du plus récent au plus ancien :
 
 Filtres facultatifs : `page` (défaut 1), `limite` (défaut 50, maximum 200),
 `im`, `prestataireId`, `factureId`, `direction`.
-Réponse `201` :
+Réponse `200` :
 
 ```json
 {
@@ -669,3 +669,26 @@ En développement, `FACTURATION_UTILISATEUR_TEST_ID` sélectionne le compte
 utilisé lorsque l'authentification ne fournit pas d'utilisateur. Les IDs
 `9001`, `9002` et `9003` du seed de facturation correspondent à l'opérateur,
 l'adjoint et le chef de démonstration.
+
+## Jeux de données IA et soutenance
+
+Le seed `seed:jeu-test-ia` prépare les scénarios S01 à S19 du contrôle visuel,
+les lignes T6/T5 utiles, les pièces jointes PDF/image et les cas de paie. Définir
+`ALLOW_DEMO_SEED=true` dans `.env`; il refuse `NODE_ENV=production`.
+
+```powershell
+npm run seed:jeu-test-ia
+npm run seed:jeu-test-ia -- --clean
+npm run seed:jeu-test-ia
+```
+
+La table à jour des factures et résultats attendus est conservée dans
+[`JEU-TEST-IA.md`](./JEU-TEST-IA.md).
+
+Le seed `seed:soutenance` prépare séparément les données de démonstration pour
+la soutenance. Il utilise les mêmes protections
+(`ALLOW_DEMO_SEED=true`, refus de `NODE_ENV=production`) :
+
+```powershell
+npm run seed:soutenance
+```

@@ -115,10 +115,14 @@ associer au client le scope client `kc-admin-api` et les rôles
 ### Données de démonstration et référentiels
 
 Le dépôt ne configure pas de commande `prisma db seed`. Les seeds disponibles
-sont `npm run seed:facturation-demo` et `npm run seed:demo-suivi`; ils sont
-réservés aux environnements hors production et exigent
-`ALLOW_DEMO_SEED=true`. Leur usage détaillé figure dans
-[`README-FACTURATION.md`](./README-FACTURATION.md).
+sont `npm run seed:facturation-demo`, `npm run seed:demo-suivi`,
+`npm run seed:jeu-test-ia` et `npm run seed:soutenance`; ils sont réservés aux
+environnements hors production et exigent `ALLOW_DEMO_SEED=true`. Leur usage
+détaillé figure dans [`README-FACTURATION.md`](./README-FACTURATION.md).
+
+Le jeu IA S01-S19 est décrit dans
+[`JEU-TEST-IA.md`](./JEU-TEST-IA.md). Il peut être supprimé puis recréé sans
+affecter les données hors du préfixe `DEMO-IA-`.
 
 Le fichier `private-data/actes-et-plafonds.sql` contient des données de
 référence. Il ne fait pas partie des migrations et ne doit être appliqué
