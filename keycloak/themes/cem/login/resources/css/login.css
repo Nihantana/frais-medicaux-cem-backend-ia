@@ -1,16 +1,25 @@
 :root {
-  --cem-red: #d90612;
-  --cem-red-dark: #b90a13;
+  --cem-red: #d7000f;
+  --cem-red-dark: #b3000c;
+  --cem-red-deep: #7e0009;
+  --cem-red-ring: rgb(215 0 15 / 14%);
+  --cem-err: #b42318;
+  --cem-err-bg: #fef3f2;
+  --cem-err-line: #fda29b;
   --cem-slate-950: #0f172a;
   --cem-slate-700: #334155;
+  --cem-slate-600: #475569;
   --cem-slate-500: #64748b;
+  --cem-slate-400: #94a3b8;
   --cem-slate-300: #cbd5e1;
   --cem-slate-200: #e2e8f0;
   --cem-slate-100: #f1f5f9;
   --cem-slate-50: #f8fafc;
-  font-family: Aptos, "Segoe UI Variable", "Segoe UI", sans-serif;
+  font-family: Inter, Aptos, "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   color: var(--cem-slate-950);
-  background: var(--cem-slate-50);
+  background: white;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
@@ -21,144 +30,217 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--cem-slate-50);
+  background: white;
 }
+
+/* ------------------------------------------------------------------ */
+/* Structure                                                           */
+/* ------------------------------------------------------------------ */
 
 .cem-auth-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(280px, 44%) minmax(420px, 56%);
+  grid-template-columns: minmax(320px, 46%) minmax(420px, 54%);
 }
+
+/* ------------------------------------------------------------------ */
+/* Panneau de marque (gauche)                                          */
+/* ------------------------------------------------------------------ */
 
 .cem-auth-brand {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
   overflow: hidden;
+  padding: clamp(40px, 6vw, 96px);
+  color: white;
   background:
-    radial-gradient(circle at 18% 12%, rgb(255 255 255 / 14%), transparent 24rem),
-    linear-gradient(145deg, #e30613 0%, #b6000b 58%, #8f080e 100%);
+    radial-gradient(circle at 10% 0%, rgb(229 34 47 / 100%) 0, rgb(229 34 47 / 0%) 34rem),
+    linear-gradient(160deg, var(--cem-red) 0%, var(--cem-red-dark) 55%, var(--cem-red-deep) 100%);
 }
 
+.cem-auth-brand::before,
 .cem-auth-brand::after {
   content: "";
   position: absolute;
-  width: 38rem;
-  height: 38rem;
-  right: -24rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cem-auth-brand::before {
+  width: 47rem;
+  height: 47rem;
+  right: -22rem;
   bottom: -24rem;
-  border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 999px;
-  box-shadow:
-    0 0 0 5rem rgb(255 255 255 / 5%),
-    0 0 0 10rem rgb(255 255 255 / 3%);
+  background: rgb(255 255 255 / 4%);
+}
+
+.cem-auth-brand::after {
+  width: 32rem;
+  height: 32rem;
+  right: -14rem;
+  bottom: -16rem;
+  background: rgb(255 255 255 / 5%);
 }
 
 .cem-auth-brand__inner {
   position: relative;
   z-index: 1;
-  width: min(430px, calc(100% - 80px));
-  color: white;
+  width: 100%;
+  max-width: 520px;
 }
 
-.cem-auth-logo {
-  width: 260px;
-  max-width: 75%;
-  height: auto;
-  padding: 16px 20px;
-  border-radius: 14px;
-  background: white;
-  box-shadow: 0 18px 50px rgb(74 8 12 / 24%);
-}
-
-.cem-auth-brand__copy {
-  margin-top: 42px;
-}
-
-.cem-auth-brand__copy p {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 800;
+.cem-auth-brand__eyebrow {
+  margin: 0 0 20px;
+  color: #ffe4e6;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.78;
 }
 
-.cem-auth-brand__copy h1 {
+.cem-auth-brand h1 {
+  margin: 0 0 22px;
+  font-size: clamp(38px, 3.4vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.cem-auth-brand__lead {
+  max-width: 460px;
+  margin: 0 0 48px;
+  color: #ffedee;
+  font-size: clamp(16px, 1.1vw, 20px);
+  line-height: 1.5;
+}
+
+.cem-auth-points {
+  display: grid;
+  gap: 20px;
   margin: 0;
-  max-width: 380px;
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: 1.03;
-  letter-spacing: -0.035em;
+  padding: 0;
+  list-style: none;
 }
 
-.cem-auth-brand__copy span {
-  display: block;
-  margin-top: 18px;
-  max-width: 350px;
-  color: rgb(255 255 255 / 82%);
-  font-size: 16px;
-  line-height: 1.55;
+.cem-auth-points li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 17px;
+  font-weight: 500;
 }
+
+.cem-auth-points__icon {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 14%);
+}
+
+.cem-auth-points__icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: white;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------------ */
+/* Panneau formulaire (droite)                                         */
+/* ------------------------------------------------------------------ */
 
 .cem-auth-panel {
+  position: relative;
   display: flex;
   min-width: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 32px 24px;
-  background:
-    linear-gradient(90deg, rgb(15 23 42 / 2%), transparent 220px),
-    white;
+  padding: 48px 32px 72px;
+  background: white;
 }
 
 .cem-auth-card {
-  width: min(430px, 100%);
-  padding: 8px 0;
+  width: min(440px, 100%);
 }
 
 .cem-auth-card__header {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .cem-auth-card__logo {
-  display: none;
-  width: 180px;
-  height: auto;
-  margin-bottom: 28px;
+  display: block;
+  width: auto;
+  height: 60px;
+  margin: 0 0 44px -4px;
   object-fit: contain;
 }
 
 .cem-auth-card__header h2 {
-  margin: 0;
+  margin: 0 0 10px;
   color: var(--cem-slate-950);
-  font-size: 30px;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.cem-auth-subtitle,
+.cem-auth-description {
+  margin: 0;
+  color: var(--cem-slate-500);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .cem-auth-description {
-  margin: -10px 0 24px;
-  color: var(--cem-slate-500);
-  font-size: 14px;
-  line-height: 1.55;
+  margin-bottom: 24px;
 }
 
+/* ------------------------------------------------------------------ */
+/* Messages                                                            */
+/* ------------------------------------------------------------------ */
+
 .cem-auth-alert {
-  margin-top: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 24px;
   border: 1px solid var(--cem-slate-200);
-  border-radius: 10px;
-  padding: 11px 12px;
-  font-size: 13px;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14.5px;
   line-height: 1.45;
 }
 
+.cem-auth-alert svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cem-auth-alert > div {
+  min-width: 0;
+}
+
 .cem-auth-alert--error {
-  border-color: #fecaca;
-  background: #fef2f2;
-  color: #991b1b;
+  border-color: var(--cem-err-line);
+  background: var(--cem-err-bg);
+  color: var(--cem-err);
 }
 
 .cem-auth-alert--warning {
@@ -167,16 +249,25 @@ body {
   color: #92400e;
 }
 
-.cem-auth-alert--success,
-.cem-auth-alert--info {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
+.cem-auth-alert--success {
+  border-color: #a6f4c5;
+  background: #ecfdf3;
+  color: #067647;
 }
+
+.cem-auth-alert--info {
+  border-color: #b2ddff;
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+/* ------------------------------------------------------------------ */
+/* Formulaire                                                          */
+/* ------------------------------------------------------------------ */
 
 .cem-auth-form {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .cem-auth-field {
@@ -187,56 +278,90 @@ body {
 .cem-auth-field label,
 .cem-auth-field__heading {
   color: var(--cem-slate-700);
-  font-size: 13px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .cem-auth-field__heading {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
 }
 
 .cem-auth-field input {
   width: 100%;
-  height: 50px;
-  border: 1px solid var(--cem-slate-300);
-  border-radius: 10px;
+  height: 52px;
+  border: 1.5px solid var(--cem-slate-300);
+  border-radius: 12px;
   background: white;
-  padding: 0 14px;
+  padding: 0 16px;
   color: var(--cem-slate-950);
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 500;
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.cem-auth-field input::placeholder {
+  color: var(--cem-slate-400);
+  font-weight: 400;
+}
+
+.cem-auth-field input:hover {
+  border-color: var(--cem-slate-400);
+}
+
 .cem-auth-field input:focus {
   border-color: var(--cem-red);
-  box-shadow: 0 0 0 4px rgb(217 6 18 / 9%);
+  box-shadow: 0 0 0 4px var(--cem-red-ring);
 }
+
+.cem-auth-field input[aria-invalid="true"] {
+  border-color: var(--cem-err);
+  box-shadow: 0 0 0 4px rgb(180 35 24 / 10%);
+}
+
+/* Neutralise le fond bleu de l'autofill du navigateur */
+.cem-auth-field input:-webkit-autofill,
+.cem-auth-field input:-webkit-autofill:hover,
+.cem-auth-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--cem-slate-950);
+  caret-color: var(--cem-slate-950);
+  box-shadow: 0 0 0 1000px white inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.cem-auth-field input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px white inset, 0 0 0 4px var(--cem-red-ring);
+}
+
+/* Mot de passe + oeil */
 
 .cem-auth-password {
   position: relative;
 }
 
 .cem-auth-password input {
-  padding-right: 48px;
+  padding-right: 56px;
 }
 
 .cem-auth-password__toggle {
   position: absolute;
   top: 50%;
-  right: 8px;
-  width: 36px;
-  height: 36px;
+  right: 6px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: var(--cem-slate-500);
   cursor: pointer;
   transform: translateY(-50%);
+  transition: background 160ms ease, color 160ms ease;
 }
 
 .cem-auth-password__toggle:hover {
@@ -245,16 +370,30 @@ body {
 }
 
 .cem-auth-password__toggle svg {
-  width: 20px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+
+.cem-auth-password__toggle .icon-eye-off,
+.cem-auth-password__toggle[aria-pressed="true"] .icon-eye {
+  display: none;
+}
+
+.cem-auth-password__toggle[aria-pressed="true"] .icon-eye-off {
+  display: block;
+}
+
+/* Liens */
 
 .cem-auth-link {
   color: var(--cem-red);
-  font-size: 12px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -263,37 +402,84 @@ body {
   text-decoration: underline;
 }
 
+/* Case à cocher personnalisée */
+
 .cem-auth-check {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin-top: -4px;
   color: var(--cem-slate-700);
-  font-size: 13px;
+  font-size: 15px;
+  cursor: pointer;
 }
 
 .cem-auth-check input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--cem-red);
+  appearance: none;
+  display: grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  place-items: center;
+  border: 1.5px solid var(--cem-slate-300);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.cem-auth-check input::after {
+  content: "";
+  width: 10px;
+  height: 5px;
+  margin-top: -2px;
+  border-bottom: 2.5px solid white;
+  border-left: 2.5px solid white;
+  opacity: 0;
+  transform: rotate(-45deg);
+}
+
+.cem-auth-check input:checked {
+  border-color: var(--cem-red);
+  background: var(--cem-red);
+}
+
+.cem-auth-check input:checked::after {
+  opacity: 1;
+}
+
+.cem-auth-check input:focus-visible {
+  box-shadow: 0 0 0 4px var(--cem-red-ring);
+}
+
+/* ------------------------------------------------------------------ */
+/* Boutons                                                             */
+/* ------------------------------------------------------------------ */
+
 .cem-auth-submit {
-  min-height: 50px;
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 4px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--cem-red);
   color: white;
   font: inherit;
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgb(217 6 18 / 18%);
+  box-shadow: 0 8px 20px -8px rgb(215 0 15 / 55%);
   transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .cem-auth-submit:hover {
   background: var(--cem-red-dark);
-  box-shadow: 0 10px 26px rgb(217 6 18 / 24%);
+  box-shadow: 0 10px 24px -8px rgb(215 0 15 / 60%);
   transform: translateY(-1px);
 }
 
@@ -301,102 +487,175 @@ body {
   transform: translateY(0);
 }
 
+.cem-auth-submit[disabled] {
+  background: var(--cem-red-dark);
+  box-shadow: none;
+  cursor: progress;
+  opacity: 0.85;
+  transform: none;
+}
+
+.cem-auth-submit--link {
+  margin-top: 4px;
+}
+
 .cem-auth-submit:focus-visible,
 .cem-auth-secondary:focus-visible,
 .cem-auth-password__toggle:focus-visible,
 .cem-auth-link:focus-visible {
-  outline: 3px solid rgb(217 6 18 / 18%);
+  outline: 3px solid rgb(215 0 15 / 28%);
   outline-offset: 2px;
 }
 
 .cem-auth-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .cem-auth-actions .cem-auth-submit {
   flex: 1;
+  width: auto;
 }
 
 .cem-auth-secondary {
-  min-height: 50px;
   display: inline-flex;
+  min-height: 50px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--cem-slate-200);
-  border-radius: 10px;
+  gap: 6px;
+  border: 1.5px solid var(--cem-slate-200);
+  border-radius: 12px;
   background: white;
+  padding: 0 16px;
   color: var(--cem-slate-700);
-  font-size: 14px;
-  font-weight: 750;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
   text-decoration: none;
-  padding: 0 14px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .cem-auth-secondary:hover {
+  border-color: var(--cem-slate-300);
   background: var(--cem-slate-50);
   color: var(--cem-slate-950);
 }
 
+.cem-auth-secondary__icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------------ */
+/* Aide + pied de page                                                 */
+/* ------------------------------------------------------------------ */
+
+.cem-auth-help {
+  margin: 32px 0 0;
+  border-top: 1px solid var(--cem-slate-200);
+  padding-top: 24px;
+  color: var(--cem-slate-500);
+  font-size: 14.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .cem-auth-footer {
-  margin: auto 0 0;
-  padding-top: 32px;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
+  position: absolute;
+  right: 0;
+  bottom: 32px;
+  left: 0;
+  margin: 0;
+  color: var(--cem-slate-500);
+  font-size: 12.5px;
+  font-weight: 600;
   letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
 }
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
 
 @media (max-width: 900px) {
   .cem-auth-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 
   .cem-auth-brand {
-    min-height: 180px;
+    padding: 28px 24px 32px;
   }
 
   .cem-auth-brand__inner {
-    width: calc(100% - 40px);
+    max-width: none;
   }
 
-  .cem-auth-logo {
+  .cem-auth-brand__eyebrow {
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .cem-auth-brand h1 {
+    margin: 0;
+    font-size: 30px;
+  }
+
+  .cem-auth-brand h1 br {
     display: none;
   }
 
-  .cem-auth-brand__copy {
-    margin-top: 0;
-  }
-
-  .cem-auth-brand__copy h1 {
-    font-size: 34px;
-  }
-
-  .cem-auth-brand__copy span {
+  .cem-auth-brand__lead,
+  .cem-auth-points {
     display: none;
+  }
+
+  .cem-auth-panel {
+    justify-content: flex-start;
+    padding: 32px 20px 24px;
   }
 
   .cem-auth-card__logo {
-    display: block;
+    height: 52px;
+    margin-bottom: 32px;
   }
 
-  .cem-auth-panel {
-    justify-content: flex-start;
-    padding: 36px 20px 20px;
+  .cem-auth-card__header h2 {
+    font-size: 26px;
   }
 
   .cem-auth-footer {
-    padding-top: 40px;
+    position: static;
+    margin-top: 32px;
   }
 }
 
-@media (max-height: 620px) {
+@media (max-height: 700px) and (min-width: 901px) {
   .cem-auth-panel {
     justify-content: flex-start;
   }
 
-  .cem-auth-brand__copy {
-    margin-top: 24px;
+  .cem-auth-card__logo {
+    margin-bottom: 28px;
+  }
+
+  .cem-auth-footer {
+    position: static;
+    margin-top: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
   }
 }

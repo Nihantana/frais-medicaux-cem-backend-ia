@@ -1,36 +1,24 @@
 <#import "template.ftl" as layout>
+<#assign hasError = (messagesPerField.existsError('password','password-confirm'))!false>
 <@layout.layout active="update-password" showTitle=true; section>
     <#if section = "title">Modifier le mot de passe
-    <#elseif section = "header">Définir un nouveau mot de passe
+    <#elseif section = "header">Nouveau mot de passe
+    <#elseif section = "subtitle">
+        <p class="cem-auth-subtitle">
+            Choisissez un nouveau mot de passe sécurisé pour accéder à votre compte.
+        </p>
     <#elseif section = "form">
-    <p class="cem-auth-description">
-        Choisissez un nouveau mot de passe sécurisé pour accéder à votre compte.
-    </p>
     <form class="cem-auth-form" action="${url.loginAction}" method="post">
-        <div class="cem-auth-field">
-            <label for="password-new">Nouveau mot de passe</label>
-            <input id="password-new"
-                   name="password-new"
-                   type="password"
-                   autocomplete="new-password"
-                   autofocus
-                   required>
-        </div>
-        <div class="cem-auth-field">
-            <label for="password-confirm">Confirmer le mot de passe</label>
-            <input id="password-confirm"
-                   name="password-confirm"
-                   type="password"
-                   autocomplete="new-password"
-                   required>
-        </div>
+        <@layout.passwordField id="password-new" name="password-new" label="Nouveau mot de passe" autocomplete="new-password" autofocus=true invalid=hasError />
+        <@layout.passwordField id="password-confirm" name="password-confirm" label="Confirmer le mot de passe" autocomplete="new-password" invalid=hasError />
+
         <div class="cem-auth-actions">
             <#if isAppInitiatedAction??>
-                <button class="cem-auth-secondary" name="cancel-aia" type="submit" value="true">
+                <button class="cem-auth-secondary" name="cancel-aia" type="submit" value="true" formnovalidate>
                     Annuler
                 </button>
             </#if>
-            <button class="cem-auth-submit" type="submit">
+            <button class="cem-auth-submit" type="submit" data-submit-label="Enregistrement…">
                 Modifier le mot de passe
             </button>
         </div>
