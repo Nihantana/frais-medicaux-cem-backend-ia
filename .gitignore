@@ -5,6 +5,7 @@ test
 # Seed configuration and scripts
 /tsconfig.seed*.json
 /scripts/seed*.ts
+/scripts/audit-permissions.mjs
 
 # compiled output
 /dist
