@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  AgentType,
   ServiceSortie,
   StatutFacture,
   TypeMouvement,
@@ -323,6 +324,9 @@ export class LigneFactureResponseDto implements LigneFactureCalculee {
 
   @ApiProperty({ nullable: true })
   categorieAgent!: string | null;
+
+  @ApiProperty({ enum: AgentType, nullable: true })
+  agentType!: AgentType | null;
 
   @ApiProperty({ type: LigneActeResponseDto })
   acte!: LigneActeResponseDto;

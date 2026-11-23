@@ -52,6 +52,7 @@ export interface LigneFactureCalculee {
   nomPrenomAgent: string | null;
   codeDirection: string | null;
   categorieAgent: string | null;
+  agentType: AgentType | null;
   acte: { id: number; code: string; nom: string };
   montantActe: string;
   montantDepassementActe: string;
@@ -1084,6 +1085,7 @@ export class FactureIndividuelleService {
         agent?.structureOrganisationnelle?.direction?.codeDirection ??
         null,
       categorieAgent: agent?.categorie?.codeCategory ?? null,
+      agentType: agent?.agentType ?? null,
       acte: {
         id: contexte.acte.id,
         code: contexte.acte.code,

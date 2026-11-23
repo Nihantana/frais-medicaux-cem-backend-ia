@@ -1,5 +1,6 @@
 import type { Sexe } from '../../personne/personne.types.js';
 import type { CodeFamille } from './idp.types.js';
+import type { AgentType } from '../../../generated/prisma/enums.js';
 
 export type CreateBeneficiary = {
   id: number;
@@ -43,6 +44,7 @@ export type ReadBeneficiary = {
   idp: string;
   observationIDP: string | null;
   matricule: number;
+  agentType: AgentType;
   codeFamille: CodeFamille;
   carteSocialePath: string | null;
   carteProfessionnellePath: string | null;

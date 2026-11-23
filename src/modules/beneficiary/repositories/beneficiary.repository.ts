@@ -10,6 +10,7 @@ import type {
   ReadBeneficiary,
   UpdateObservationBeneficiary,
 } from '../types/beneficiary.types.js';
+import { AgentType } from '../../../generated/prisma/enums.js';
 import { buildCodeFamille } from '../utils/build-idp.js';
 import { HandlePrismaErrors } from '../../../common/decorators/handle-prisma-errors.decorator.js';
 
@@ -18,7 +19,7 @@ const BENEFICIARY_INCLUDE = {
     include: {
       agent: true,
       familleAgent: {
-        include: { conjoint: true, enfant: true },
+        include: { agent: true, conjoint: true, enfant: true },
       },
     },
   },
@@ -61,6 +62,17 @@ export class BeneficiaryRepository {
     return matricule;
   }
 
+  private resolveAgentType(
+    personne: BeneficiaryWithRelations['personne'],
+  ): AgentType {
+    const agentType =
+      personne.agent?.agentType ?? personne.familleAgent?.agent.agentType;
+    if (agentType === undefined) {
+      throw new Error(`Person ${personne.id} is not linked to an agent`);
+    }
+    return AgentType[agentType];
+  }
+
   /** Builds the read contract from the beneficiary and its relations. */
   private toReadBeneficiary(
     beneficiary: BeneficiaryWithRelations,
@@ -76,6 +88,7 @@ export class BeneficiaryRepository {
       idp: beneficiary.idp,
       observationIDP: beneficiary.observationIDP,
       matricule: this.resolveMatricule(personne),
+      agentType: this.resolveAgentType(personne),
       codeFamille: this.resolveCodeFamille(personne),
       carteSocialePath: familleAgent?.carteSocialePath ?? null,
       carteProfessionnellePath: agent?.carteProfessionnellePath ?? null,

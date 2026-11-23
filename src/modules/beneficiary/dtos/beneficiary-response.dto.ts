@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Sexe } from '../../personne/personne.types.js';
 import type { ReadBeneficiary } from '../types/beneficiary.types.js';
 import type { CodeFamille } from '../types/idp.types.js';
+import { AgentType } from '../../../generated/prisma/enums.js';
 
 export class BeneficiaryResponseDto implements ReadBeneficiary {
   @ApiProperty()
@@ -24,6 +25,9 @@ export class BeneficiaryResponseDto implements ReadBeneficiary {
 
   @ApiProperty()
   matricule!: number;
+
+  @ApiProperty({ enum: AgentType })
+  agentType!: AgentType;
 
   @ApiProperty({ enum: ['AGENT', 'CONJOINT', 'ENFANT'] })
   codeFamille!: CodeFamille;
