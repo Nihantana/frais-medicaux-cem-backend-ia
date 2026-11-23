@@ -196,8 +196,11 @@ export class FeuilleSuiviResponseDto implements FeuilleSuivi {
 
 export class FeuilleSuiviCompacteResponseDto implements Pick<
   FeuilleSuivi,
-  'modele' | 'annee' | 'lignes' | 'totaux'
+  'entete' | 'modele' | 'annee' | 'lignes' | 'totaux'
 > {
+  @ApiProperty({ type: EnteteFeuilleSuiviResponseDto })
+  entete!: EnteteFeuilleSuiviResponseDto;
+
   @ApiProperty({
     enum: ['PLAFOND_ANNUEL', 'SEANCES', 'PLAFOND_ACTE_ET_ANNUEL'],
   })

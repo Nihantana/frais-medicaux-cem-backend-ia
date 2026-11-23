@@ -3,8 +3,8 @@ import {
   AgentType,
   PorteePlafond,
   RegimeActe,
-  RoleUtilisateur,
   StatutFacture,
+  TypeConsommationT6,
   TypeRegle,
   UnitePlafond,
 } from '../../../src/generated/prisma/enums.js';
@@ -117,6 +117,7 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
       acte: { findUnique: vi.fn().mockResolvedValue(acte) },
       factureIndividuelle: {
         findFirst: findFactureLine,
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn(async () => {
           ligneT6 = ligneFacture();
           return ligneFacture();
@@ -127,9 +128,31 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
           return ligneFacture();
         }),
       },
+      medicamentReference: {
+        upsert: vi.fn().mockResolvedValue({ id: 42 }),
+      },
+      detailConsommationT6: {
+        upsert: vi.fn().mockResolvedValue({ id: 17 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
       attestation: { findUnique: vi.fn().mockResolvedValue(null) },
       ligneSuivi: {
         findFirst: vi.fn().mockResolvedValue({ id: ligneSuivi.id }),
+      },
+      plafond: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 1,
+            unite: UnitePlafond.MONTANT,
+            montant: new Prisma.Decimal('1000000.00'),
+            nbSeances: null,
+            dateEffet: new Date('2026-01-01T00:00:00.000Z'),
+            dateFin: null,
+            acteID: 3,
+            categorieActeID: null,
+            porteePlafond: PorteePlafond.PAR_AN,
+          },
+        ]),
       },
     };
     const prisma = {
@@ -194,6 +217,7 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
         verifierTraitementAutorise: vi.fn().mockResolvedValue(undefined),
         verifierT5Finalise: vi.fn().mockResolvedValue(undefined),
       } as never,
+      new PlafondResolutionService(prisma as never),
     );
     const suiviT5 = new SuiviService(
       prisma as never,
@@ -221,16 +245,42 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
     expect(await lireVerrou()).toBe(false);
     const creee = await serviceT6.creer(
       facture.id,
-      { id: 5, role: RoleUtilisateur.OPERATEUR },
+      { id: 5, permissions: ['suivi-creer'] },
       {
-        libelle: 'Consultation',
+        libelle: 'Paracétamol 500 mg',
         dateActe: '2026-01-15',
         idp: beneficiaire.idp,
         acteId: acte.id,
         montantActe: 100_000,
+        consommation: {
+          type: TypeConsommationT6.MEDICAMENT,
+          quantite: 2,
+          posologie: '1 comprimé matin et soir pendant 5 jours',
+          medicament: { nom: 'Paracétamol 500 mg' },
+        },
       },
     );
     expect(creee.numLigne).toBe(1);
+    expect(tx.medicamentReference.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { cleNormalisee: 'MANUEL:paracetamol 500 mg' },
+        create: expect.objectContaining({
+          source: 'MANUEL',
+          statut: 'A_VERIFIER',
+        }),
+      }),
+    );
+    expect(tx.detailConsommationT6.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { ligneT6Id: creee.id },
+        create: expect.objectContaining({
+          type: TypeConsommationT6.MEDICAMENT,
+          quantite: 2,
+          posologie: '1 comprimé matin et soir pendant 5 jours',
+          medicamentId: 42,
+        }),
+      }),
+    );
     expect(creee.avertissements).toContain(
       'Les dépassements saisis diffèrent de ceux de la LigneSuivi correspondante.',
     );
@@ -238,7 +288,7 @@ describe('Verrou T5_x piloté par les lignes T6', () => {
 
     await serviceT6.supprimer(facture.id, creee.id, {
       id: 5,
-      role: RoleUtilisateur.OPERATEUR,
+      permissions: ['suivi-supprimer'],
     });
     expect(await lireVerrou()).toBe(false);
   });

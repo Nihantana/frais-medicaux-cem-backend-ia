@@ -230,6 +230,7 @@ export class SuiviController {
     feuille: FeuilleSuivi,
   ): FeuilleSuiviCompacteResponseDto {
     return {
+      entete: feuille.entete,
       modele: feuille.modele,
       annee: feuille.annee,
       lignes: feuille.lignes,

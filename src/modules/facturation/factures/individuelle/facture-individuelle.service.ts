@@ -13,6 +13,7 @@ import {
   StatutFacture,
   TypeRegle,
   TypeMouvement,
+  TypeConsommationT6,
   UnitePlafond,
 } from '../../../../generated/prisma/enums.js';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
@@ -35,6 +36,7 @@ import type {
   ModifierFactureIndividuelleDto,
   PropositionDepassementDto,
 } from '../../dtos/facture-individuelle.dto.js';
+import type { DetailConsommationT6Dto } from '../../dtos/consommation-t6.dto.js';
 import { VerificationFactureService } from '../../../verification-facture/verification-facture.service.js';
 import { PlafondResolutionService } from '../../../plafond/plafond-resolution.service.js';
 
@@ -64,10 +66,37 @@ export interface LigneFactureCalculee {
   montantAgent: string;
   montantDepassement: string;
   totalChargeAgent: string;
+  consommation: ConsommationT6Lue | null;
   numPec: number | null;
   refPaie: string | null;
   moisAffectation: string | null;
   avertissements: string[];
+}
+
+export interface ConsommationT6Lue {
+  type: TypeConsommationT6;
+  quantite: string | null;
+  posologie: string | null;
+  medicament: {
+    id: number;
+    nom: string;
+    sourceId: string | null;
+    rxcui: string | null;
+    substanceActive: string | null;
+    source: string;
+    statut: string;
+  } | null;
+  lunettes: {
+    typeVerre: string | null;
+    monture: string | null;
+    sphereOD: string | null;
+    cylindreOD: string | null;
+    axeOD: number | null;
+    sphereOG: string | null;
+    cylindreOG: string | null;
+    axeOG: number | null;
+  } | null;
+  description: string | null;
 }
 
 export interface ControleTotaux {
@@ -245,6 +274,13 @@ export class FactureIndividuelleService {
           priseEnChargeId: donnees.numPec,
         },
       });
+      if (donnees.consommation !== undefined) {
+        await this.enregistrerConsommation(
+          tx,
+          updated.id,
+          donnees.consommation,
+        );
+      }
       return this.formaterLigne(tx, updated.id, calcule, contexte);
     });
   }
@@ -297,7 +333,9 @@ export class FactureIndividuelleService {
                   include: {
                     personne: true,
                     service: true,
-                    structureOrganisationnelle: { include: { direction: true } },
+                    structureOrganisationnelle: {
+                      include: { direction: true },
+                    },
                     categorie: true,
                   },
                 },
@@ -309,7 +347,9 @@ export class FactureIndividuelleService {
                       include: {
                         personne: true,
                         service: true,
-                        structureOrganisationnelle: { include: { direction: true } },
+                        structureOrganisationnelle: {
+                          include: { direction: true },
+                        },
                         categorie: true,
                       },
                     },
@@ -645,6 +685,7 @@ export class FactureIndividuelleService {
         priseEnChargeId: donnees.numPec ?? null,
       },
     });
+    await this.enregistrerConsommation(tx, ligne.id, donnees.consommation);
     await this.enregistrerModificationFacture(
       tx,
       idFacture,
@@ -653,6 +694,103 @@ export class FactureIndividuelleService {
       `Création de la ligne ${numLigne}.`,
     );
     return this.formaterLigne(tx, ligne.id, calcule, contexte);
+  }
+
+  private async enregistrerConsommation(
+    tx: Prisma.TransactionClient,
+    ligneT6Id: number,
+    donnees: DetailConsommationT6Dto | null | undefined,
+  ): Promise<void> {
+    if (donnees === undefined) return;
+    if (donnees === null) {
+      await tx.detailConsommationT6.deleteMany({ where: { ligneT6Id } });
+      return;
+    }
+
+    let medicamentId: number | null = null;
+    if (donnees.type === TypeConsommationT6.MEDICAMENT) {
+      if (!donnees.medicament || donnees.quantite === undefined) {
+        throw new BadRequestException(
+          'Un médicament et une quantité sont obligatoires pour ce suivi.',
+        );
+      }
+      const nom = donnees.medicament.nom.trim();
+      const ancienRxcui = donnees.medicament.rxcui?.trim() || null;
+      const sourceId = donnees.medicament.sourceId?.trim() || ancienRxcui;
+      const source = sourceId
+        ? (donnees.medicament.source ?? (ancienRxcui ? 'RXNORM' : 'BDPM'))
+        : 'MANUEL';
+      const cleNormalisee = sourceId
+        ? `${source}:${sourceId}`
+        : `MANUEL:${nom
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLocaleLowerCase()
+            .replace(/\s+/g, ' ')}`;
+      const medicament = await tx.medicamentReference.upsert({
+        where: { cleNormalisee },
+        create: {
+          cleNormalisee,
+          source,
+          sourceId,
+          nom,
+          substanceActive: donnees.medicament.substanceActive?.trim() || null,
+          statut: sourceId ? 'REFERENCE' : 'A_VERIFIER',
+        },
+        update: {
+          nom,
+          substanceActive: donnees.medicament.substanceActive?.trim() || null,
+        },
+        select: { id: true },
+      });
+      medicamentId = medicament.id;
+    } else if (donnees.type === TypeConsommationT6.LUNETTES) {
+      if (
+        !donnees.lunettes ||
+        (!donnees.lunettes.typeVerre?.trim() &&
+          donnees.lunettes.sphereOD === undefined &&
+          donnees.lunettes.sphereOG === undefined)
+      ) {
+        throw new BadRequestException(
+          'Saisissez au moins le type de verre ou une correction pour les lunettes.',
+        );
+      }
+    } else if (!donnees.description?.trim()) {
+      throw new BadRequestException(
+        'Une description est obligatoire pour un autre type de consommation.',
+      );
+    }
+
+    const lunettes =
+      donnees.type === TypeConsommationT6.LUNETTES
+        ? donnees.lunettes
+        : undefined;
+    const data = {
+      type: donnees.type,
+      quantite:
+        donnees.type === TypeConsommationT6.MEDICAMENT
+          ? donnees.quantite
+          : null,
+      posologie:
+        donnees.type === TypeConsommationT6.MEDICAMENT
+          ? donnees.posologie?.trim() || null
+          : null,
+      medicamentId,
+      typeVerre: lunettes?.typeVerre?.trim() || null,
+      monture: lunettes?.monture?.trim() || null,
+      sphereOD: lunettes?.sphereOD,
+      cylindreOD: lunettes?.cylindreOD,
+      axeOD: lunettes?.axeOD,
+      sphereOG: lunettes?.sphereOG,
+      cylindreOG: lunettes?.cylindreOG,
+      axeOG: lunettes?.axeOG,
+      description: donnees.description?.trim() || null,
+    };
+    await tx.detailConsommationT6.upsert({
+      where: { ligneT6Id },
+      create: { ligneT6Id, ...data },
+      update: data,
+    });
   }
 
   private async avecRetryNumLigne<T>(operation: () => Promise<T>): Promise<T> {
@@ -678,7 +816,13 @@ export class FactureIndividuelleService {
     factureId: number;
     statut: StatutFacture;
     beneficiaireId: number;
-    acte: { id: number; code: string; nomActe: string; regime: RegimeActe; categorieActeId: number };
+    acte: {
+      id: number;
+      code: string;
+      nomActe: string;
+      regime: RegimeActe;
+      categorieActeId: number;
+    };
     regle: { type: TypeRegle; tauxCem: Prisma.Decimal };
     avertissements: string[];
   }> {
@@ -795,7 +939,9 @@ export class FactureIndividuelleService {
 
     let depassementActe = new Prisma.Decimal(0);
     if (montantDepassementActeManuel !== undefined) {
-      depassementActe = new Prisma.Decimal(String(montantDepassementActeManuel));
+      depassementActe = new Prisma.Decimal(
+        String(montantDepassementActeManuel),
+      );
     } else if (resolution?.parActe?.unite === UnitePlafond.MONTANT) {
       const plafondActe = new Prisma.Decimal(String(resolution.parActe.valeur));
       const montant = new Prisma.Decimal(String(montantActe));
@@ -807,7 +953,9 @@ export class FactureIndividuelleService {
 
     let depassementPlafond = new Prisma.Decimal(0);
     if (montantDepassementPlafondManuel !== undefined) {
-      depassementPlafond = new Prisma.Decimal(String(montantDepassementPlafondManuel));
+      depassementPlafond = new Prisma.Decimal(
+        String(montantDepassementPlafondManuel),
+      );
     } else if (resolution?.parAn?.unite === UnitePlafond.MONTANT) {
       const plafondAnnuel = new Prisma.Decimal(String(resolution.parAn.valeur));
       const lignesAnnuelles = await tx.factureIndividuelle.findMany({
@@ -818,7 +966,9 @@ export class FactureIndividuelleService {
             gte: convertirDate(`${date.getUTCFullYear()}-01-01`),
             lte: convertirDate(`${date.getUTCFullYear()}-12-31`),
           },
-          ...(exclureLigneId === undefined ? {} : { id: { not: exclureLigneId } }),
+          ...(exclureLigneId === undefined
+            ? {}
+            : { id: { not: exclureLigneId } }),
         },
         select: {
           montantActe: true,
@@ -827,12 +977,17 @@ export class FactureIndividuelleService {
         },
       });
       const couvertAnnuel = lignesAnnuelles.reduce(
-        (total, ligne) => total.plus(
-          ligne.montantActe.minus(ligne.montantDepassementActe).minus(ligne.montantDepassementPlafond),
-        ),
+        (total, ligne) =>
+          total.plus(
+            ligne.montantActe
+              .minus(ligne.montantDepassementActe)
+              .minus(ligne.montantDepassementPlafond),
+          ),
         new Prisma.Decimal(0),
       );
-      const retenuActuel = new Prisma.Decimal(String(montantActe)).minus(depassementActe);
+      const retenuActuel = new Prisma.Decimal(String(montantActe)).minus(
+        depassementActe,
+      );
       const capaciteRestante = Prisma.Decimal.max(
         new Prisma.Decimal(0),
         plafondAnnuel.minus(couvertAnnuel),
@@ -949,30 +1104,36 @@ export class FactureIndividuelleService {
   ): Promise<LigneFactureCalculee> {
     const ligne = await client.factureIndividuelle.findUniqueOrThrow({
       where: { id },
-        include: {
-          beneficiaire: {
-            include: {
-              personne: {
-                include: {
-                  agent: {
-                    include: {
-                      personne: true,
-                      service: true,
-                      structureOrganisationnelle: { include: { direction: true } },
-                      categorie: true,
+      include: {
+        consommation: {
+          include: { medicament: true },
+        },
+        beneficiaire: {
+          include: {
+            personne: {
+              include: {
+                agent: {
+                  include: {
+                    personne: true,
+                    service: true,
+                    structureOrganisationnelle: {
+                      include: { direction: true },
                     },
+                    categorie: true,
                   },
-                  familleAgent: {
-                    include: {
-                      conjoint: true,
-                      enfant: true,
-                      agent: {
-                        include: {
-                          personne: true,
-                          service: true,
-                          structureOrganisationnelle: { include: { direction: true } },
-                          categorie: true,
+                },
+                familleAgent: {
+                  include: {
+                    conjoint: true,
+                    enfant: true,
+                    agent: {
+                      include: {
+                        personne: true,
+                        service: true,
+                        structureOrganisationnelle: {
+                          include: { direction: true },
                         },
+                        categorie: true,
                       },
                     },
                   },
@@ -981,6 +1142,7 @@ export class FactureIndividuelleService {
             },
           },
         },
+      },
     });
     const parts = this.calcul.calculerPartsLigne(calcule);
     const personne = ligne.beneficiaire.personne;
@@ -1101,6 +1263,44 @@ export class FactureIndividuelleService {
       montantAgent: parts.montantAgent.toFixed(2),
       montantDepassement: parts.montantDepassement.toFixed(2),
       totalChargeAgent: parts.totalChargeAgent.toFixed(2),
+      consommation: ligne.consommation
+        ? {
+            type: ligne.consommation.type,
+            quantite: ligne.consommation.quantite?.toFixed(2) ?? null,
+            posologie: ligne.consommation.posologie,
+            medicament: ligne.consommation.medicament
+              ? {
+                  id: ligne.consommation.medicament.id,
+                  nom: ligne.consommation.medicament.nom,
+                  sourceId: ligne.consommation.medicament.sourceId,
+                  rxcui:
+                    ligne.consommation.medicament.source === 'RXNORM'
+                      ? ligne.consommation.medicament.sourceId
+                      : null,
+                  substanceActive:
+                    ligne.consommation.medicament.substanceActive,
+                  source: ligne.consommation.medicament.source,
+                  statut: ligne.consommation.medicament.statut,
+                }
+              : null,
+            lunettes:
+              ligne.consommation.type === TypeConsommationT6.LUNETTES
+                ? {
+                    typeVerre: ligne.consommation.typeVerre,
+                    monture: ligne.consommation.monture,
+                    sphereOD: ligne.consommation.sphereOD?.toFixed(2) ?? null,
+                    cylindreOD:
+                      ligne.consommation.cylindreOD?.toFixed(2) ?? null,
+                    axeOD: ligne.consommation.axeOD,
+                    sphereOG: ligne.consommation.sphereOG?.toFixed(2) ?? null,
+                    cylindreOG:
+                      ligne.consommation.cylindreOG?.toFixed(2) ?? null,
+                    axeOG: ligne.consommation.axeOG,
+                  }
+                : null,
+            description: ligne.consommation.description,
+          }
+        : null,
       numPec: ligne.priseEnChargeId,
       refPaie: ligne.refPaie,
       moisAffectation:

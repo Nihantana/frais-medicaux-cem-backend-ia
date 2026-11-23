@@ -114,6 +114,7 @@ model FactureIndividuelle {
   acte           Acte                   @relation(fields: [acteId], references: [id])
   beneficiaire   Beneficiaire           @relation(fields: [beneficiaireId], references: [id])
   decision       DecisionPriseEnCharge?
+  consommation   DetailConsommationT6?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -123,5 +124,64 @@ model FactureIndividuelle {
   @@index([priseEnChargeId])
   @@index([moisAffectation])
   @@map("facture_individuelle")
+  @@schema("facturation")
+}
+
+enum TypeConsommationT6 {
+  MEDICAMENT
+  LUNETTES
+  AUTRE
+
+  @@schema("facturation")
+}
+
+enum StatutMedicament {
+  REFERENCE
+  A_VERIFIER
+
+  @@schema("facturation")
+}
+
+model MedicamentReference {
+  id              Int             @id @default(autoincrement())
+  cleNormalisee   String          @unique @map("cle_normalisee")
+  source          String
+  sourceId        String?         @map("source_id")
+  nom             String
+  substanceActive String?         @map("substance_active")
+  statut          StatutMedicament @default(A_VERIFIER)
+  consommations   DetailConsommationT6[]
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@unique([source, sourceId])
+  @@index([nom])
+  @@index([statut])
+  @@map("medicament_reference")
+  @@schema("facturation")
+}
+
+model DetailConsommationT6 {
+  id             Int                @id @default(autoincrement())
+  ligneT6Id      Int                @unique @map("ligne_t6_id")
+  type           TypeConsommationT6
+  quantite       Decimal?           @db.Decimal(10, 2)
+  posologie      String?            @db.Text
+  medicamentId   Int?               @map("medicament_id")
+  typeVerre      String?            @map("type_verre")
+  monture        String?
+  sphereOD       Decimal?           @map("sphere_od") @db.Decimal(6, 2)
+  cylindreOD     Decimal?           @map("cylindre_od") @db.Decimal(6, 2)
+  axeOD          Int?               @map("axe_od")
+  sphereOG       Decimal?           @map("sphere_og") @db.Decimal(6, 2)
+  cylindreOG     Decimal?           @map("cylindre_og") @db.Decimal(6, 2)
+  axeOG          Int?               @map("axe_og")
+  description    String?
+  ligneT6        FactureIndividuelle @relation(fields: [ligneT6Id], references: [id], onDelete: Cascade)
+  medicament     MedicamentReference? @relation(fields: [medicamentId], references: [id], onDelete: Restrict)
+
+  @@index([type])
+  @@index([medicamentId])
+  @@map("detail_consommation_t6")
   @@schema("facturation")
 }

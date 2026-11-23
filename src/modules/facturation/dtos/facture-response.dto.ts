@@ -3,6 +3,7 @@ import {
   AgentType,
   ServiceSortie,
   StatutFacture,
+  TypeConsommationT6,
   TypeMouvement,
 } from '../../../generated/prisma/enums.js';
 import type {
@@ -12,6 +13,7 @@ import type {
 import type { MontantsSerialises } from '../shared/serialiser-montants.js';
 import type {
   ControleTotaux,
+  ConsommationT6Lue,
   LigneFactureCalculee,
   TotauxLignesFacture,
 } from '../factures/individuelle/facture-individuelle.service.js';
@@ -76,7 +78,6 @@ export class UtilisateurMouvementResponseDto {
 
   @ApiProperty()
   nom!: string;
-
 }
 
 export class MouvementFactureListeResponseDto {
@@ -361,6 +362,9 @@ export class LigneFactureResponseDto implements LigneFactureCalculee {
   @ApiProperty()
   totalChargeAgent!: string;
 
+  @ApiProperty({ type: () => ConsommationT6ResponseDto, nullable: true })
+  consommation!: ConsommationT6ResponseDto | null;
+
   @ApiProperty({ type: Number, nullable: true })
   numPec!: number | null;
 
@@ -372,6 +376,189 @@ export class LigneFactureResponseDto implements LigneFactureCalculee {
 
   @ApiProperty({ type: [String] })
   avertissements!: string[];
+}
+
+export class MedicamentConsommationResponseDto {
+  @ApiProperty()
+  id!: number;
+
+  @ApiProperty()
+  nom!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  sourceId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, deprecated: true })
+  rxcui!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  substanceActive!: string | null;
+
+  @ApiProperty()
+  source!: string;
+
+  @ApiProperty()
+  statut!: string;
+}
+
+export class LunettesConsommationResponseDto {
+  @ApiProperty({ type: String, nullable: true })
+  typeVerre!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  monture!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  sphereOD!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  cylindreOD!: string | null;
+
+  @ApiProperty({ type: Number, nullable: true })
+  axeOD!: number | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  sphereOG!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  cylindreOG!: string | null;
+
+  @ApiProperty({ type: Number, nullable: true })
+  axeOG!: number | null;
+}
+
+export class ConsommationT6ResponseDto implements ConsommationT6Lue {
+  @ApiProperty({ enum: TypeConsommationT6 })
+  type!: TypeConsommationT6;
+
+  @ApiProperty({ type: String, nullable: true })
+  quantite!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  posologie!: string | null;
+
+  @ApiProperty({
+    type: () => MedicamentConsommationResponseDto,
+    nullable: true,
+  })
+  medicament!: MedicamentConsommationResponseDto | null;
+
+  @ApiProperty({ type: () => LunettesConsommationResponseDto, nullable: true })
+  lunettes!: LunettesConsommationResponseDto | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  description!: string | null;
+}
+
+export class MedicamentConsommationListeResponseDto {
+  @ApiProperty()
+  nom!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  sourceId!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, deprecated: true })
+  rxcui!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  substanceActive!: string | null;
+
+  @ApiProperty()
+  source!: string;
+
+  @ApiProperty()
+  statut!: string;
+}
+
+export class ConsommationT6ElementResponseDto {
+  @ApiProperty()
+  ligneId!: number;
+
+  @ApiProperty({ type: String, format: 'date' })
+  dateActe!: string;
+
+  @ApiProperty()
+  refSociale!: string;
+
+  @ApiProperty()
+  numFacture!: string;
+
+  @ApiProperty()
+  idp!: string;
+
+  @ApiProperty()
+  nomPrenomBeneficiaire!: string;
+
+  @ApiProperty({ enum: TypeConsommationT6 })
+  type!: TypeConsommationT6;
+
+  @ApiProperty()
+  libelle!: string;
+
+  @ApiProperty()
+  montantActe!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  quantite!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  posologie!: string | null;
+
+  @ApiProperty({
+    type: () => MedicamentConsommationListeResponseDto,
+    nullable: true,
+  })
+  medicament!: MedicamentConsommationListeResponseDto | null;
+
+  @ApiProperty({ type: () => LunettesConsommationResponseDto, nullable: true })
+  lunettes!: LunettesConsommationResponseDto | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  description!: string | null;
+}
+
+export class ConsommationT6ListResponseDto {
+  @ApiProperty({ type: [ConsommationT6ElementResponseDto] })
+  elements!: ConsommationT6ElementResponseDto[];
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  limit!: number;
+}
+
+export class MedicamentSuggestionResponseDto {
+  @ApiProperty({ type: String, nullable: true })
+  sourceId!: string | null;
+
+  @ApiProperty()
+  source!: string;
+
+  @ApiProperty()
+  nom!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  substanceActive!: string | null;
+}
+
+export class MedicamentRechercheResponseDto {
+  @ApiProperty({ type: [MedicamentSuggestionResponseDto] })
+  suggestions!: MedicamentSuggestionResponseDto[];
+
+  @ApiProperty({ type: String, nullable: true })
+  avertissement!: string | null;
+}
+
+export class BeneficiaireT6ValidationResponseDto {
+  @ApiProperty()
+  idp!: string;
+
+  @ApiProperty()
+  nomPrenomBeneficiaire!: string;
 }
 
 export class TotauxLignesFactureResponseDto implements TotauxLignesFacture {

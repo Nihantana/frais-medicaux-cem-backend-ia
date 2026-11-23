@@ -9,8 +9,10 @@ import {
   IsString,
   Matches,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DetailConsommationT6Dto } from './consommation-t6.dto.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -88,6 +90,12 @@ export class CreerFactureIndividuelleDto {
   @IsOptional()
   @IsString()
   observationDepassement?: string;
+
+  @ApiPropertyOptional({ type: () => DetailConsommationT6Dto, nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DetailConsommationT6Dto)
+  consommation?: DetailConsommationT6Dto | null;
 }
 
 export class ModifierFactureIndividuelleDto {
@@ -167,6 +175,12 @@ export class ModifierFactureIndividuelleDto {
   @IsOptional()
   @IsString()
   observationDepassement?: string | null;
+
+  @ApiPropertyOptional({ type: () => DetailConsommationT6Dto, nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DetailConsommationT6Dto)
+  consommation?: DetailConsommationT6Dto | null;
 }
 
 export class PropositionDepassementDto {
