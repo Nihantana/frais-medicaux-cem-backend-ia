@@ -14,6 +14,7 @@ import {
   NotificationFactureService,
   type NotificationFactureVue,
 } from '../shared/notification-facture.service.js';
+import { RequirePermissions } from '../../auth/authorization.decorators.js';
 
 class NotificationResponseDto implements NotificationFactureVue {
   id!: number;
@@ -29,6 +30,7 @@ class NotificationResponseDto implements NotificationFactureVue {
 }
 
 @Controller('notifications')
+@RequirePermissions('notifications.read')
 export class NotificationFactureController {
   constructor(private readonly notifications: NotificationFactureService) {}
 

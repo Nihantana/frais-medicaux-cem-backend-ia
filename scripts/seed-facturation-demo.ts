@@ -8,7 +8,6 @@ import { Prisma } from '../src/generated/prisma/client.js';
 import {
   AgentType,
   AgentConcerne,
-  RoleUtilisateur,
   Sexe,
   StatutAttestation,
   StatutFacture,
@@ -370,17 +369,14 @@ async function main(): Promise<void> {
         {
           id: idsUtilisateurs[0]!,
           nom: `${PREFIXE_DEMO}Opérateur`,
-          role: RoleUtilisateur.OPERATEUR,
         },
         {
           id: idsUtilisateurs[1]!,
           nom: `${PREFIXE_DEMO}Adjoint`,
-          role: RoleUtilisateur.ADJOINT,
         },
         {
           id: idsUtilisateurs[2]!,
           nom: `${PREFIXE_DEMO}Chef`,
-          role: RoleUtilisateur.CHEF,
         },
       ];
 
@@ -397,11 +393,11 @@ async function main(): Promise<void> {
         await tx.utilisateur.upsert({
           where: { id: utilisateur.id },
           create: utilisateur,
-          update: { nom: utilisateur.nom, role: utilisateur.role },
+          update: { nom: utilisateur.nom },
         });
       }
 
-      const dateEffet = new Date('2026-01-01T00:00:00.000Z');
+      const dateEffet = new Date('1900-01-01T00:00:00.000Z');
       const regles = [
         {
           id: idsRegles[0]!,

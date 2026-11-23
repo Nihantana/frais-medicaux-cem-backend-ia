@@ -155,7 +155,6 @@ export class AuditService {
           nom: true,
           email: true,
           oauthSubject: true,
-          role: true,
         },
       }),
       this.keycloakAdmin.listSessions(),
@@ -183,7 +182,6 @@ export class AuditService {
         id: user.id,
         nom: user.nom,
         email: user.email,
-        role: user.role,
         connecte: activeSessions.length > 0,
         nombreSessions: activeSessions.length,
         connecteDepuis:

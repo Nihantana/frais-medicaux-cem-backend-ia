@@ -48,8 +48,13 @@ import {
   AgentDeletionRequestResponseDto,
   AgentResponseDto,
 } from './dtos/agent-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('agents')
+@RequireResourcePermissions('agents.read', 'agents.write')
 export class AgentController {
   constructor(
     private readonly saveAgentUseCase: SaveAgentUseCase,
@@ -126,6 +131,7 @@ export class AgentController {
   }
 
   @Delete(':matricule')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDeletion(@Param('matricule', ParseIntPipe) matricule: number) {
@@ -133,6 +139,7 @@ export class AgentController {
   }
 
   @Post(':matricule/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDeletion(@Param('matricule', ParseIntPipe) matricule: number) {
@@ -140,6 +147,7 @@ export class AgentController {
   }
 
   @Post(':matricule/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDeletion(@Param('matricule', ParseIntPipe) matricule: number) {
@@ -154,6 +162,7 @@ export class AgentController {
   }
 
   @Get('deletion-requests')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AgentDeletionRequestResponseDto, isArray: true })
   async findDeletionRequests(): Promise<AgentDeletionRequestResponseDto[]> {

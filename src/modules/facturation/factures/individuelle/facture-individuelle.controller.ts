@@ -43,6 +43,7 @@ import {
   LignesFactureResponseDto,
   PropositionDepassementResponseDto,
 } from '../../dtos/facture-response.dto.js';
+import { RequireResourcePermissions } from '../../../auth/authorization.decorators.js';
 
 interface RequeteAvecUtilisateur {
   user?: ActeurFacture;
@@ -57,6 +58,7 @@ const VALIDATION_PAYLOAD = new ValidationPipe({
 @ApiTags('Factures individuelles')
 @Controller('factures')
 @UseGuards(FactureRoleGuard)
+@RequireResourcePermissions('t6.read', 't6.write')
 @ApiExtraModels(PropositionDepassementResponseDto)
 export class FactureIndividuelleController {
   constructor(private readonly lignes: FactureIndividuelleService) {}

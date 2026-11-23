@@ -13,6 +13,7 @@ import {
   StatutFacture,
   TypeRegle,
   TypeMouvement,
+  UnitePlafond,
 } from '../../../../generated/prisma/enums.js';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import { RegleService } from '../../../regles-prise-en-charge/regle.service.js';
@@ -35,6 +36,7 @@ import type {
   PropositionDepassementDto,
 } from '../../dtos/facture-individuelle.dto.js';
 import { VerificationFactureService } from '../../../verification-facture/verification-facture.service.js';
+import { PlafondResolutionService } from '../../../plafond/plafond-resolution.service.js';
 
 export interface LigneFactureCalculee {
   id: number;
@@ -114,6 +116,7 @@ export class FactureIndividuelleService {
     private readonly suivi: SuiviService,
     private readonly workflow: FactureWorkflowService,
     private readonly verification: VerificationFactureService,
+    private readonly plafonds: PlafondResolutionService,
     private readonly cloture: FactureClotureService = new FactureClotureService(),
   ) {}
 
@@ -124,7 +127,7 @@ export class FactureIndividuelleService {
   ): Promise<LigneFactureCalculee> {
     this.permissions.verifier(
       ActionFacture.SUIVI_CREER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     return this.avecRetryNumLigne(() =>
@@ -142,7 +145,7 @@ export class FactureIndividuelleService {
   ): Promise<LigneFactureCalculee> {
     this.permissions.verifier(
       ActionFacture.SUIVI_MODIFIER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     return this.prisma.$transaction(async (tx) => {
@@ -189,10 +192,18 @@ export class FactureIndividuelleService {
         dateActe,
       );
       const montantActe = donnees.montantActe ?? ligne.montantActe;
-      const depActe =
-        donnees.montantDepassementActe ?? ligne.montantDepassementActe;
-      const depPlafond =
-        donnees.montantDepassementPlafond ?? ligne.montantDepassementPlafond;
+      const depassements = await this.calculerDepassementsAutomatiques(
+        tx,
+        contexte.beneficiaireId,
+        contexte.acte,
+        dateActe,
+        donnees.montantActe ?? ligne.montantActe,
+        donnees.montantDepassementActe,
+        donnees.montantDepassementPlafond,
+        ligne.id,
+      );
+      const depActe = depassements.depassementActe;
+      const depPlafond = depassements.depassementPlafond;
       const calcule = this.calcul.calculerLigne(
         montantActe,
         depActe,
@@ -244,7 +255,7 @@ export class FactureIndividuelleService {
   ): Promise<void> {
     this.permissions.verifier(
       ActionFacture.SUIVI_SUPPRIMER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     await this.prisma.$transaction(async (tx) => {
@@ -401,7 +412,7 @@ export class FactureIndividuelleService {
   ): Promise<{ ligneIds: number[]; refPaie: string }> {
     this.permissions.verifier(
       ActionFacture.SUIVI_MODIFIER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     if (donnees.ligneIds.length === 0)
@@ -594,10 +605,19 @@ export class FactureIndividuelleService {
       select: { numLigne: true },
     });
     const numLigne = (max?.numLigne ?? 0) + 1;
+    const depassements = await this.calculerDepassementsAutomatiques(
+      tx,
+      contexte.beneficiaireId,
+      contexte.acte,
+      donnees.dateActe,
+      donnees.montantActe,
+      donnees.montantDepassementActe,
+      donnees.montantDepassementPlafond,
+    );
     const calcule = this.calcul.calculerLigne(
       donnees.montantActe,
-      donnees.montantDepassementActe ?? 0,
-      donnees.montantDepassementPlafond ?? 0,
+      depassements.depassementActe,
+      depassements.depassementPlafond,
       contexte.regle,
       donnees.montantCemIntegral,
     );
@@ -657,7 +677,7 @@ export class FactureIndividuelleService {
     factureId: number;
     statut: StatutFacture;
     beneficiaireId: number;
-    acte: { id: number; code: string; nomActe: string; regime: RegimeActe };
+    acte: { id: number; code: string; nomActe: string; regime: RegimeActe; categorieActeId: number };
     regle: { type: TypeRegle; tauxCem: Prisma.Decimal };
     avertissements: string[];
   }> {
@@ -743,10 +763,86 @@ export class FactureIndividuelleService {
         code: acte.code,
         nomActe: acte.nomActe,
         regime: acte.regime,
+        categorieActeId: acte.categorieActeId,
       },
       regle: { type: regle.type, tauxCem: regle.tauxCem },
       avertissements,
     };
+  }
+
+  private async calculerDepassementsAutomatiques(
+    tx: DbClient,
+    beneficiaireId: number,
+    acte: { id: number; categorieActeId: number },
+    dateIso: string,
+    montantActe: number | string | Prisma.Decimal,
+    montantDepassementActeManuel?: number,
+    montantDepassementPlafondManuel?: number,
+    exclureLigneId?: number,
+  ): Promise<{
+    depassementActe: Prisma.Decimal;
+    depassementPlafond: Prisma.Decimal;
+  }> {
+    const date = convertirDate(dateIso);
+    const plafonds = await this.plafonds.resoudre(
+      [{ type: 'ACTE', id: acte.id, categorieActeId: acte.categorieActeId }],
+      date,
+      false,
+      tx,
+    );
+    const resolution = plafonds.get(`ACTE:${acte.id}`);
+
+    let depassementActe = new Prisma.Decimal(0);
+    if (montantDepassementActeManuel !== undefined) {
+      depassementActe = new Prisma.Decimal(String(montantDepassementActeManuel));
+    } else if (resolution?.parActe?.unite === UnitePlafond.MONTANT) {
+      const plafondActe = new Prisma.Decimal(String(resolution.parActe.valeur));
+      const montant = new Prisma.Decimal(String(montantActe));
+      depassementActe = Prisma.Decimal.max(
+        new Prisma.Decimal(0),
+        montant.minus(plafondActe),
+      );
+    }
+
+    let depassementPlafond = new Prisma.Decimal(0);
+    if (montantDepassementPlafondManuel !== undefined) {
+      depassementPlafond = new Prisma.Decimal(String(montantDepassementPlafondManuel));
+    } else if (resolution?.parAn?.unite === UnitePlafond.MONTANT) {
+      const plafondAnnuel = new Prisma.Decimal(String(resolution.parAn.valeur));
+      const lignesAnnuelles = await tx.factureIndividuelle.findMany({
+        where: {
+          beneficiaireId,
+          acte: { categorieActeId: acte.categorieActeId },
+          dateActe: {
+            gte: convertirDate(`${date.getUTCFullYear()}-01-01`),
+            lte: convertirDate(`${date.getUTCFullYear()}-12-31`),
+          },
+          ...(exclureLigneId === undefined ? {} : { id: { not: exclureLigneId } }),
+        },
+        select: {
+          montantActe: true,
+          montantDepassementActe: true,
+          montantDepassementPlafond: true,
+        },
+      });
+      const couvertAnnuel = lignesAnnuelles.reduce(
+        (total, ligne) => total.plus(
+          ligne.montantActe.minus(ligne.montantDepassementActe).minus(ligne.montantDepassementPlafond),
+        ),
+        new Prisma.Decimal(0),
+      );
+      const retenuActuel = new Prisma.Decimal(String(montantActe)).minus(depassementActe);
+      const capaciteRestante = Prisma.Decimal.max(
+        new Prisma.Decimal(0),
+        plafondAnnuel.minus(couvertAnnuel),
+      );
+      depassementPlafond = Prisma.Decimal.max(
+        new Prisma.Decimal(0),
+        retenuActuel.minus(Prisma.Decimal.min(retenuActuel, capaciteRestante)),
+      );
+    }
+
+    return { depassementActe, depassementPlafond };
   }
 
   private async enregistrerModificationFacture(

@@ -26,8 +26,10 @@ import { ReadPlafondUseCase } from './use-cases/plafond.read.js';
 import { CreatePlafondUseCase } from './use-cases/plafond.create.js';
 import { UpdatePlafondUseCase } from './use-cases/plafond.update.js';
 import { PlafondResponseDto } from './dtos/plafond-response.dto.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 @Controller('plafonds')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class PlafondController {
   constructor(
     private readonly createPlafondUseCase: CreatePlafondUseCase,

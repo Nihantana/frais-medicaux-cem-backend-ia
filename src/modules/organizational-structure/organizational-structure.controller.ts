@@ -39,8 +39,13 @@ import {
   DirectionAvecServicesResponseDto,
   ServiceResponseDto,
 } from './dtos/structure-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('organizational-structures')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class StructureOrganisationnelleController {
   constructor(
     private readonly createAgenceUseCase: CreateAgenceUseCase,
@@ -56,6 +61,7 @@ export class StructureOrganisationnelleController {
   ) {}
 
   @Delete('agencies/:code-agence')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestAgencyDeletion(@Param('code-agence') id: string): Promise<void> {
@@ -63,6 +69,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('agencies/:code-agence/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateAgencyDeletion(
@@ -72,6 +79,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('agencies/:code-agence/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectAgencyDeletion(@Param('code-agence') id: string): Promise<void> {
@@ -79,6 +87,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Delete('directions/:code-direction')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDirectionDeletion(
@@ -88,6 +97,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('directions/:code-direction/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDirectionDeletion(
@@ -97,6 +107,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('directions/:code-direction/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDirectionDeletion(
@@ -106,6 +117,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Delete('services/:code-service')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestServiceDeletion(
@@ -115,6 +127,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('services/:code-service/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateServiceDeletion(
@@ -124,6 +137,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Post('services/:code-service/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectServiceDeletion(
@@ -146,6 +160,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Get('agencies/deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: AgenceResponseDto, isArray: true })
   async findAgencyDeletionRequests(): Promise<AgenceResponseDto[]> {
     return this.readAllAgencesUseCase.findDeletionRequests();
@@ -178,6 +193,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Get('directions/deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: DirectionAvecServicesResponseDto, isArray: true })
   async findDirectionDeletionRequests(): Promise<
     DirectionAvecServicesResponseDto[]
@@ -220,6 +236,7 @@ export class StructureOrganisationnelleController {
   }
 
   @Get('services/deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: ServiceResponseDto, isArray: true })
   async findServiceDeletionRequests(): Promise<ServiceResponseDto[]> {
     return this.readServiceUseCase.findDeletionRequests();

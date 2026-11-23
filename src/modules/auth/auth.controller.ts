@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import type { RequeteAuthentifiee } from './auth.types.js';
+import { AuthorizationService } from './authorization.service.js';
 import { KeycloakAuthGuard } from './keycloak-auth.guard.js';
 import { ProfileService } from './profile.service.js';
 import { ModifierProfilDto } from './dtos/modifier-profil.dto.js';
@@ -44,13 +45,28 @@ const MIME_BY_EXT: Record<string, string> = {
 @Controller('auth')
 @UseGuards(KeycloakAuthGuard)
 export class AuthController {
-  constructor(private readonly profile: ProfileService) {}
+  constructor(
+    private readonly profile: ProfileService,
+    private readonly authorization: AuthorizationService,
+  ) {}
 
   @Get('me')
   @ApiOkResponse()
   @ApiOperation({ summary: "Retourner l'utilisateur connecté" })
   me(@Req() request: Request & RequeteAuthentifiee) {
     return request.user;
+  }
+
+  @Get('me/permissions')
+  @ApiOkResponse({ type: String, isArray: true })
+  @ApiOperation({ summary: "Retourner les permissions de l'utilisateur connecté" })
+  async mesPermissions(
+    @Req() request: Request & RequeteAuthentifiee,
+  ): Promise<string[]> {
+    const permissions = await this.authorization.obtenirPermissions(
+      request.user!.id,
+    );
+    return [...permissions];
   }
 
   @Patch('me')

@@ -11,8 +11,10 @@ import { UpdateBeneficiaryUseCase } from './use-cases/beneficiary.update.js';
 import { UpdateObservationBeneficiaryDto } from './dtos/update-observation-beneficiary.dto.js';
 import { ApiOkResponse } from '@nestjs/swagger';
 import { BeneficiaryResponseDto } from './dtos/beneficiary-response.dto.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 @Controller('beneficiaries')
+@RequireResourcePermissions('beneficiaries.read', 'beneficiaries.write')
 export class BeneficiaryController {
   constructor(
     private readonly readBeneficiaryUseCase: ReadBeneficiaryUseCase,

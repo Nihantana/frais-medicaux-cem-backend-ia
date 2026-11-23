@@ -45,8 +45,13 @@ import {
   ConjointResponseDto,
   EnfantResponseDto,
 } from './dtos/agent-family-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('agent-families')
+@RequireResourcePermissions('beneficiaries.read', 'beneficiaries.write')
 export class AgentFamilyController {
   constructor(
     private readonly saveConjointUseCase: SaveConjointUseCase,
@@ -66,6 +71,7 @@ export class AgentFamilyController {
   }
 
   @Delete(':type/:id')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDeletion(
@@ -76,6 +82,7 @@ export class AgentFamilyController {
   }
 
   @Post(':type/:id/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDeletion(
@@ -86,6 +93,7 @@ export class AgentFamilyController {
   }
 
   @Post(':type/:id/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDeletion(
@@ -96,12 +104,14 @@ export class AgentFamilyController {
   }
 
   @Get('spouses/deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: ConjointResponseDto, isArray: true })
   async findSpouseDeletionRequests(): Promise<ConjointResponseDto[]> {
     return this.deletionUseCase.readConjointRequests();
   }
 
   @Get('children/deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: EnfantResponseDto, isArray: true })
   async findChildDeletionRequests(): Promise<EnfantResponseDto[]> {
     return this.deletionUseCase.readEnfantRequests();

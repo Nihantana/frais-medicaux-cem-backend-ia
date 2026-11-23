@@ -11,7 +11,6 @@ import type {
   MouvementFacture,
 } from '../../../../generated/prisma/client.js';
 import {
-  RoleUtilisateur,
   StatutFacture,
   TypeMouvement,
 } from '../../../../generated/prisma/enums.js';
@@ -111,8 +110,8 @@ type MouvementListe = Prisma.MouvementFactureGetPayload<{
     createdAt: true;
     remarque: true;
     service: true;
-    effectuePar: { select: { id: true; nom: true; role: true } };
-    adresseA: { select: { id: true; nom: true; role: true } };
+    effectuePar: { select: { id: true; nom: true } };
+    adresseA: { select: { id: true; nom: true } };
   };
 }>;
 
@@ -137,8 +136,8 @@ type FactureListeeAvecMouvements = Prisma.FactureGlobaleGetPayload<{
         createdAt: true;
         remarque: true;
         service: true;
-        effectuePar: { select: { id: true; nom: true; role: true } };
-        adresseA: { select: { id: true; nom: true; role: true } };
+        effectuePar: { select: { id: true; nom: true } };
+        adresseA: { select: { id: true; nom: true } };
       };
     };
   };
@@ -153,7 +152,6 @@ export type FactureDetailleeAvecMouvements = FactureWorkflowLue & {
 
 export interface ActeurFacture {
   id: number;
-  role: RoleUtilisateur;
   permissions?: readonly string[];
 }
 
@@ -218,8 +216,8 @@ export class FactureGlobaleService {
             createdAt: true,
             remarque: true,
             service: true,
-            effectuePar: { select: { id: true, nom: true, role: true } },
-            adresseA: { select: { id: true, nom: true, role: true } },
+            effectuePar: { select: { id: true, nom: true } },
+            adresseA: { select: { id: true, nom: true } },
           },
         },
       },
@@ -280,8 +278,8 @@ export class FactureGlobaleService {
         createdAt: true,
         remarque: true,
         service: true,
-        effectuePar: { select: { id: true, nom: true, role: true } },
-        adresseA: { select: { id: true, nom: true, role: true } },
+        effectuePar: { select: { id: true, nom: true } },
+        adresseA: { select: { id: true, nom: true } },
       },
     });
     return { ...facture, mouvements };
@@ -344,12 +342,12 @@ export class FactureGlobaleService {
     });
     if (enregistrement === null) {
       throw new ConflictException(
-        "La date d'enregistrement de la facture est introuvable.",
+        "La date denregistrement de la facture est introuvable.",
       );
     }
     if (date.getTime() < dateJourMetier(enregistrement.date).getTime()) {
       throw new BadRequestException(
-        "La date du mouvement ne peut pas être antérieure à la date d'enregistrement de la facture.",
+        "La date du mouvement ne peut pas être antérieure à la date denregistrement de la facture.",
       );
     }
     return date;
@@ -382,7 +380,7 @@ export class FactureGlobaleService {
         const dateFormatee =
           FORMAT_DATE_ENREGISTREMENT.format(dateEnregistrement);
         throw new UnprocessableEntityException(
-          `Aucune règle de prise en charge n'est configurée pour la date du ${dateFormatee}.`,
+          `Aucune règle de prise en charge nest configurée pour la date du ${dateFormatee}.`,
         );
       }
 
@@ -472,7 +470,7 @@ export class FactureGlobaleService {
       this.factureWorkflowService.determinerTransition(
         factureAvantControle.statut,
         ActionFacture.ENVOI_VALIDATION,
-        acteur.role,
+        '',
         undefined,
         acteur.permissions,
       );
@@ -482,7 +480,10 @@ export class FactureGlobaleService {
           ? null
           : await tx.utilisateur.findUnique({
               where: { id: donnees.destinataireId },
-              select: { id: true, role: true },
+              select: {
+                id: true,
+                rolesAssignees: { select: { role: { select: { code: true } } } },
+              },
             });
       if (donnees.destinataireId !== undefined && destinataire === null) {
         throw new NotFoundException(
@@ -491,12 +492,12 @@ export class FactureGlobaleService {
       }
       if (
         destinataire === null ||
-        ![RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF].some(
-          (role) => role === destinataire.role,
+        !destinataire.rolesAssignees.some(({ role }) =>
+          role.code === 'ADJOINT' || role.code === 'CHEF_SERVICE',
         )
       ) {
         throw new UnprocessableEntityException(
-          'Le destinataire doit avoir le rôle ADJOINT ou CHEF.',
+          'Le destinataire doit avoir le rôle ADJOINT ou CHEF_SERVICE.',
         );
       }
       return this.effectuerTransitionDansTransaction(
@@ -529,7 +530,7 @@ export class FactureGlobaleService {
       this.factureWorkflowService.determinerTransition(
         factureAvantControle.statut,
         ActionFacture.VALIDATION,
-        acteur.role,
+        '',
         undefined,
         acteur.permissions,
       );
@@ -715,7 +716,7 @@ export class FactureGlobaleService {
       const statutSuivant = this.factureWorkflowService.determinerTransition(
         facture.statut,
         ActionFacture.MODIFIER_INFORMATIONS,
-        acteur.role,
+        '',
         undefined,
         acteur.permissions,
       );
@@ -957,7 +958,7 @@ export class FactureGlobaleService {
     const statutCalcule = this.factureWorkflowService.determinerTransition(
       facture.statut,
       action,
-      acteur.role,
+      '',
       statutSuivantDynamique,
       acteur.permissions,
     );
@@ -1068,7 +1069,7 @@ export class FactureGlobaleService {
   ): void {
     if (nombreDeLignes === 0) {
       throw new ConflictException(
-        `La facture n'est plus au statut ${statutAttendu}; elle a été modifiée par une autre action.`,
+        `La facture nest plus au statut ${statutAttendu}; elle a été modifiée par une autre action.`,
       );
     }
   }
@@ -1122,9 +1123,9 @@ function formaterChangement(changement: ChampModifie): string {
 function formaterValeur(valeur: unknown): string {
   if (Prisma.Decimal.isDecimal(valeur)) return valeur.toFixed(2);
   if (valeur instanceof Date) return valeur.toISOString().slice(0, 10);
-  if (valeur === null) return 'vide';
+  if (valeur === null) return '';
   if (typeof valeur === 'string' || typeof valeur === 'number') {
     return String(valeur);
   }
-  return 'valeur inconnue';
+  return 'Valeur inconnue';
 }

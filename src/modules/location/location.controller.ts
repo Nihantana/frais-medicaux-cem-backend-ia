@@ -21,8 +21,13 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { LocationResponseDto } from './dtos/location-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('locations')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class LieuController {
   constructor(
     private readonly saveLieuUseCase: SaveLieuUseCase,
@@ -32,6 +37,7 @@ export class LieuController {
   ) {}
 
   @Delete(':id')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -39,6 +45,7 @@ export class LieuController {
   }
 
   @Post(':id/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -46,6 +53,7 @@ export class LieuController {
   }
 
   @Post(':id/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -65,6 +73,7 @@ export class LieuController {
   }
 
   @Get('deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: LocationResponseDto, isArray: true })
   async findDeletionRequests(): Promise<LocationResponseDto[]> {
     return this.readLieuUseCase.findDeletionRequests();

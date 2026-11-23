@@ -29,9 +29,11 @@ import {
 } from './dtos/assistant-facture.dto.js';
 import { AssistantFactureService } from './assistant-facture.service.js';
 import { VerificationFactureService } from './verification-facture.service.js';
+import { RequirePermissions } from '../auth/authorization.decorators.js';
 
 @ApiTags('Vérification des factures')
 @Controller('factures/:id/controle-visuel')
+@RequirePermissions('verification.use')
 export class VerificationFactureController {
   constructor(
     private readonly verification: VerificationFactureService,

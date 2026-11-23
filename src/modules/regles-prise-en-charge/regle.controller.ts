@@ -20,8 +20,10 @@ import {
   ReglesResponseEnveloppeDto,
 } from './dtos/regle-response.dto.js';
 import type { Regle } from '../../generated/prisma/client.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 @Controller('regles-prise-en-charge')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class RegleController {
   constructor(private readonly regleService: RegleService) {}
 

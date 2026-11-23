@@ -12,7 +12,6 @@ const UTILISATEUR_PROFIL = {
   id: true,
   nom: true,
   email: true,
-  role: true,
   photoPath: true,
   rolesAssignees: { select: { role: { select: { code: true } } } },
 } as const;
@@ -90,7 +89,6 @@ export class ProfileService {
     id: number;
     nom: string;
     email: string | null;
-    role: UtilisateurAuthentifie['role'];
     photoPath: string | null;
     rolesAssignees: { role: { code: string } }[];
   }): UtilisateurAuthentifie {
@@ -101,7 +99,6 @@ export class ProfileService {
       id: utilisateur.id,
       nom: utilisateur.nom,
       email: utilisateur.email,
-      role: utilisateur.role,
       roles: utilisateur.rolesAssignees.map(({ role }) => role.code),
       hasPhoto: utilisateur.photoPath !== null,
     };

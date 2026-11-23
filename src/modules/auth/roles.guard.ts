@@ -30,7 +30,7 @@ export class RolesGuard implements CanActivate {
         "Aucun utilisateur authentifié n'est disponible.",
       );
     }
-    const roles = new Set([user.role, ...user.roles].map((role) => role.toUpperCase()));
+    const roles = new Set(user.roles.map((role) => role.toUpperCase()));
     if (!required.some((role) => roles.has(role))) {
       throw new ForbiddenException(
         "L'utilisateur authentifié ne possède aucun rôle requis.",

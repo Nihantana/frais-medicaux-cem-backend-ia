@@ -36,6 +36,7 @@ import {
   ActeAvecPlafondsResponseDto,
   ActeResponseDto,
 } from './dtos/acte-response.dto.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 const CREATE_ACTE_PIPE = new ValidationPipe({
   transform: true,
@@ -51,6 +52,7 @@ const UPDATE_ACTE_PIPE = new ValidationPipe({
 type CreateActeResult = ActeResponseDto | ActeAvecPlafondsResponseDto;
 
 @Controller('actes')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 @ApiExtraModels(ActeResponseDto, ActeAvecPlafondsResponseDto)
 export class ActeController {
   constructor(

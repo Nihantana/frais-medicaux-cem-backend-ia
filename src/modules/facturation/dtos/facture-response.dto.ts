@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  RoleUtilisateur,
   ServiceSortie,
   StatutFacture,
   TypeMouvement,
@@ -77,8 +76,6 @@ export class UtilisateurMouvementResponseDto {
   @ApiProperty()
   nom!: string;
 
-  @ApiProperty({ enum: RoleUtilisateur })
-  role!: RoleUtilisateur;
 }
 
 export class MouvementFactureListeResponseDto {

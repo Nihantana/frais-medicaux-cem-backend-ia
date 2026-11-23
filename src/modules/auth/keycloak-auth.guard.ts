@@ -16,6 +16,7 @@ export class KeycloakAuthGuard implements CanActivate {
     const request = context
       .switchToHttp()
       .getRequest<Request & RequeteAuthentifiee>();
+    if (request.user !== undefined) return true;
     const authorization = request.headers.authorization;
     if (authorization === undefined || !authorization.startsWith('Bearer ')) {
       throw new UnauthorizedException(

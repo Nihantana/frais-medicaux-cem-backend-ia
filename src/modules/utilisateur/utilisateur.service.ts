@@ -5,8 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
-import { RoleUtilisateur } from '../../generated/prisma/enums.js';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service.js';
+import {
+  calculerPermissionsRoles,
+  DEFAULT_ROLE_PERMISSIONS,
+} from '../auth/access-control.policy.js';
 import {
   CreerUtilisateurDto,
   ModifierUtilisateurDto,
@@ -32,11 +35,13 @@ const PERMISSION_SELECT = {
 export class UtilisateurService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async lister(roles?: RoleUtilisateur[]) {
+  async lister(roles?: string[]) {
     const utilisateurs = await this.prisma.utilisateur.findMany({
-      ...(roles === undefined ? {} : { where: { role: { in: roles } } }),
+      ...(roles === undefined
+        ? {}
+        : { where: { rolesAssignees: { some: { role: { code: { in: roles } } } } } }),
       select: UTILISATEUR_SELECT,
-      orderBy: [{ role: 'asc' }, { nom: 'asc' }, { id: 'asc' }],
+      orderBy: [{ nom: 'asc' }, { id: 'asc' }],
     });
     return utilisateurs.map((utilisateur) => this.presenter(utilisateur));
   }
@@ -53,14 +58,11 @@ export class UtilisateurService {
   }
 
   async creer(donnees: CreerUtilisateurDto) {
-    const roles = await this.resoudreRoles(
-      donnees.roles ?? (donnees.role === undefined ? [] : [donnees.role]),
-    );
+    const roles = await this.resoudreRoles(donnees.roles ?? []);
     const utilisateur = await this.prisma.utilisateur.create({
       data: {
         nom: donnees.nom,
         email: donnees.email,
-        role: donnees.role ?? this.trouverRoleHistorique(roles),
         rolesAssignees: {
           create: roles.map((role) => ({ roleId: role.id })),
         },
@@ -74,7 +76,6 @@ export class UtilisateurService {
     if (
       donnees.nom === undefined &&
       donnees.email === undefined &&
-      donnees.role === undefined &&
       donnees.roles === undefined
     ) {
       throw new BadRequestException(
@@ -85,27 +86,19 @@ export class UtilisateurService {
       return await this.prisma.$transaction(async (transaction) => {
         const utilisateur = await transaction.utilisateur.findUnique({
           where: { id },
-          select: { role: true },
+          select: { id: true },
         });
         if (utilisateur === null) {
           throw new NotFoundException(`L'utilisateur ${id} est introuvable.`);
         }
         const adminAvant =
-          utilisateur.role === RoleUtilisateur.ADMINISTRATEUR ||
-          (
-            await transaction.utilisateurRole.count({
-              where: {
-                utilisateurId: id,
-                role: { code: 'ADMINISTRATEUR' },
-              },
-            })
-          ) > 0;
-        if (donnees.role !== undefined && donnees.role !== utilisateur.role) {
-          await transaction.utilisateurPermission.deleteMany({
-            where: { utilisateurId: id },
-          });
-        }
-        let roleHistorique = donnees.role;
+          (await transaction.utilisateurRole.count({
+            where: {
+              utilisateurId: id,
+              role: { code: 'ADMINISTRATEUR' },
+            },
+          })) > 0;
+        let adminApres = adminAvant;
         if (donnees.roles !== undefined) {
           const roles = await this.resoudreRoles(donnees.roles, transaction);
           await transaction.utilisateurRole.deleteMany({
@@ -117,16 +110,8 @@ export class UtilisateurService {
           await transaction.utilisateurPermission.deleteMany({
             where: { utilisateurId: id },
           });
-          roleHistorique = this.trouverRoleHistorique(roles);
+          adminApres = roles.some((role) => role.code === 'ADMINISTRATEUR');
         }
-        const adminApres =
-          donnees.role === undefined && donnees.roles === undefined
-            ? adminAvant
-            : roleHistorique === RoleUtilisateur.ADMINISTRATEUR ||
-              (donnees.roles?.some(
-                (role) => role.trim().toUpperCase() === 'ADMINISTRATEUR',
-              ) ??
-                false);
         if (adminAvant && !adminApres) {
           await this.verifierDernierAdministrateur(transaction);
         }
@@ -135,7 +120,6 @@ export class UtilisateurService {
           data: {
             ...(donnees.nom === undefined ? {} : { nom: donnees.nom }),
             ...(donnees.email === undefined ? {} : { email: donnees.email }),
-            ...(roleHistorique === undefined ? {} : { role: roleHistorique }),
           },
           select: UTILISATEUR_SELECT,
         });
@@ -154,13 +138,12 @@ export class UtilisateurService {
       await this.prisma.$transaction(async (transaction) => {
         const utilisateur = await transaction.utilisateur.findUnique({
           where: { id },
-          select: { role: true },
+          select: { id: true },
         });
         if (utilisateur === null) {
           throw new NotFoundException(`L'utilisateur ${id} est introuvable.`);
         }
         const estAdministrateur =
-          utilisateur.role === RoleUtilisateur.ADMINISTRATEUR ||
           (await transaction.utilisateurRole.count({
             where: {
               utilisateurId: id,
@@ -197,8 +180,7 @@ export class UtilisateurService {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { id },
       select: {
-        role: true,
-        rolesAssignees: { select: { roleId: true } },
+        rolesAssignees: { select: { roleId: true, role: { select: { code: true } } } },
         permissionsPersonnalisees: {
           select: { permissionId: true, autorisee: true },
         },
@@ -208,21 +190,23 @@ export class UtilisateurService {
       throw new NotFoundException(`L'utilisateur ${id} est introuvable.`);
     }
 
-    const [permissions, rolesParDefaut, permissionsRolesConfigurables] =
+    const [permissions, permissionsRolesConfigurables] =
       await Promise.all([
       this.prisma.permission.findMany({ select: PERMISSION_SELECT }),
-      this.prisma.rolePermission.findMany({
-        where: { role: utilisateur.role },
-        select: { permissionId: true, autorisee: true },
-      }),
-      this.prisma.roleConfigPermission.findMany({
-        where: {
-          roleId: {
-            in: utilisateur.rolesAssignees.map((role) => role.roleId),
-          },
-        },
-        select: { permissionId: true, autorisee: true },
-      }),
+      utilisateur.rolesAssignees.length === 0
+        ? Promise.resolve([])
+        : this.prisma.roleConfigPermission.findMany({
+            where: {
+              roleId: {
+                in: utilisateur.rolesAssignees.map((role) => role.roleId),
+              },
+            },
+            select: {
+              autorisee: true,
+              role: { select: { code: true } },
+              permission: { select: { code: true } },
+            },
+          }),
     ]);
     const exceptions = new Map(
       utilisateur.permissionsPersonnalisees.map((item) => [
@@ -230,19 +214,20 @@ export class UtilisateurService {
         item.autorisee,
       ]),
     );
-    const defaults = new Map<number, boolean>();
-    for (const item of rolesParDefaut) {
-      defaults.set(
-        item.permissionId,
-        (defaults.get(item.permissionId) ?? false) || item.autorisee,
-      );
-    }
-    for (const item of permissionsRolesConfigurables) {
-      defaults.set(
-        item.permissionId,
-        (defaults.get(item.permissionId) ?? false) || item.autorisee,
-      );
-    }
+    const permissionsDesRoles = calculerPermissionsRoles(
+      utilisateur.rolesAssignees.map(({ role }) => role.code),
+      permissionsRolesConfigurables.map(({ autorisee, role, permission }) => ({
+        roleCode: role.code,
+        permissionCode: permission.code,
+        autorisee,
+      })),
+    );
+    const defaults = new Map<number, boolean>(
+      permissions.map((permission) => [
+        permission.id,
+        permissionsDesRoles.has(permission.code),
+      ]),
+    );
 
     return permissions.map((permission) => ({
       ...permission,
@@ -307,23 +292,33 @@ export class UtilisateurService {
     await this.prisma.role.delete({ where: { id } });
   }
 
-  obtenirPermissionsRole(id: number) {
-    return this.prisma.permission.findMany({
-      select: {
-        ...PERMISSION_SELECT,
-        rolesConfigurables: {
-          where: { roleId: id },
-          select: { autorisee: true },
+  async obtenirPermissionsRole(id: number) {
+    const [role, permissions] = await Promise.all([
+      this.prisma.role.findUnique({ where: { id }, select: { code: true } }),
+      this.prisma.permission.findMany({
+        select: {
+          ...PERMISSION_SELECT,
+          rolesConfigurables: {
+            where: { roleId: id },
+            select: { autorisee: true },
+          },
         },
-      },
-      orderBy: { code: 'asc' },
-    }).then((permissions) =>
-      permissions.map(({ rolesConfigurables, ...permission }) => ({
-        ...permission,
-        autorisee: rolesConfigurables[0]?.autorisee ?? false,
-        personnalisee: rolesConfigurables.length > 0,
-      })),
+        orderBy: { code: 'asc' },
+      }),
+    ]);
+    if (role === null) {
+      throw new NotFoundException(`Le rôle ${id} est introuvable.`);
+    }
+    const permissionsParDefaut = new Set<string>(
+      DEFAULT_ROLE_PERMISSIONS[role.code] ?? [],
     );
+    return permissions.map(({ rolesConfigurables, ...permission }) => ({
+      ...permission,
+      autorisee:
+        rolesConfigurables[0]?.autorisee ??
+        permissionsParDefaut.has(permission.code),
+      personnalisee: rolesConfigurables.length > 0,
+    }));
   }
 
   async modifierPermissionRole(
@@ -398,14 +393,9 @@ export class UtilisateurService {
   ): Promise<void> {
     const nombreAdministrateurs = await prisma.utilisateur.count({
       where: {
-        OR: [
-          { role: RoleUtilisateur.ADMINISTRATEUR },
-          {
-            rolesAssignees: {
-              some: { role: { code: 'ADMINISTRATEUR' } },
-            },
-          },
-        ],
+        rolesAssignees: {
+          some: { role: { code: 'ADMINISTRATEUR' } },
+        },
       },
     });
     if (nombreAdministrateurs <= 1) {
@@ -413,31 +403,6 @@ export class UtilisateurService {
         "Le dernier administrateur ne peut pas perdre ses droits ou être supprimé.",
       );
     }
-  }
-
-  private trouverRoleHistorique(
-    roles: readonly { code: string }[],
-  ): RoleUtilisateur {
-    const correspondances: Record<string, RoleUtilisateur> = {
-      ASSISTANT: RoleUtilisateur.OPERATEUR,
-      CONTROLEUR: RoleUtilisateur.ADJOINT,
-      ADJOINT: RoleUtilisateur.ADJOINT,
-      CHEF_SERVICE: RoleUtilisateur.CHEF,
-      DRH: RoleUtilisateur.CHEF,
-      ADMINISTRATEUR: RoleUtilisateur.ADMINISTRATEUR,
-    };
-    const compatible = roles.find(
-      (role) =>
-        correspondances[role.code] !== undefined ||
-        Object.values(RoleUtilisateur).includes(role.code as RoleUtilisateur),
-    );
-    return (
-      (compatible === undefined
-        ? undefined
-        : correspondances[compatible.code] ??
-          (compatible.code as RoleUtilisateur)) ??
-      RoleUtilisateur.OPERATEUR
-    );
   }
 
   async modifierPermission(

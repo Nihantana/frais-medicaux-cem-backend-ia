@@ -24,8 +24,10 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { AgentCategoryResponseDto } from './dtos/agent-category-response.dto.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 @Controller('agent-categories')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class AgentCategoryController {
   constructor(
     private readonly saveAgentCategoryUseCase: SaveAgentCategoryUseCase,

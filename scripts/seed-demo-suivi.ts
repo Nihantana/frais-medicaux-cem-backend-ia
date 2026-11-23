@@ -23,7 +23,6 @@ import { FactureCalculService } from '../src/modules/facturation/shared/facture-
 import { SuiviCalculService } from '../src/modules/facturation/suivi/suivi-calcul.service.js';
 import {
   PorteePlafond,
-  RoleUtilisateur,
   UnitePlafond,
   Sexe,
   RegimeActe,
@@ -304,7 +303,7 @@ async function main(): Promise<void> {
     });
     const acteRepository = app.get(ActeRepository, { strict: false });
     const utilisateur = await prisma.utilisateur.findFirst({
-      where: { role: RoleUtilisateur.OPERATEUR },
+      where: { rolesAssignees: { some: { role: { code: 'ASSISTANT' } } } },
     });
     const prestataire = await prisma.prestataire.findFirst({
       where: { statut: StatutPrestataire.PRIVE },
@@ -313,7 +312,7 @@ async function main(): Promise<void> {
       throw new Error(
         'Un utilisateur OPERATEUR et un prestataire réel sont nécessaires.',
       );
-    const acteur = { id: utilisateur.id, role: utilisateur.role };
+    const acteur = { id: utilisateur.id, permissions: undefined };
     const idps: string[] = [];
     let numero = 1;
     const executer = async (
@@ -389,7 +388,7 @@ async function main(): Promise<void> {
       actesDemo.set(acte.code, acte);
     }
     const plafondCategorie = await plafondRepository.create({
-      dateEffet: '2026-01-01',
+      dateEffet: '1900-01-01',
       porteePlafond: PorteePlafond.PAR_AN,
       unite: UnitePlafond.MONTANT,
       montant: 800,

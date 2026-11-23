@@ -4,10 +4,12 @@ import { KeycloakAuthGuard } from '../../auth/keycloak-auth.guard.js';
 import { obtenirUtilisateurId, type RequeteAvecUtilisateur } from '../shared/utilisateur-facture.js';
 import { EnvoyerMessageDiscussionDto } from './discussion-facture.dto.js';
 import { DiscussionFactureService, type DiscussionFactureVue, type MessageDiscussionVue } from './discussion-facture.service.js';
+import { RequirePermissions } from '../../auth/authorization.decorators.js';
 
 @Controller('factures/:factureId/discussion')
 @ApiBearerAuth()
 @UseGuards(KeycloakAuthGuard)
+@RequirePermissions('discussion.use')
 export class DiscussionFactureController {
   constructor(private readonly discussions: DiscussionFactureService) {}
 

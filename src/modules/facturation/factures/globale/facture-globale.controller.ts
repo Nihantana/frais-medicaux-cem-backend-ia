@@ -34,8 +34,10 @@ import {
   TransitionFactureResponseDto,
 } from '../../dtos/facture-response.dto.js';
 import type { StatutRapprochementFacture } from '../individuelle/facture-individuelle.service.js';
+import { RequireResourcePermissions } from '../../../auth/authorization.decorators.js';
 
 @Controller('factures')
+@RequireResourcePermissions('invoices.read', 'invoices.write')
 @ApiExtraModels(
   FactureGlobaleListeeResponseDto,
   FactureGlobaleDetailResponseDto,

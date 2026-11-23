@@ -1,7 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
-  IsEnum,
   IsArray,
   ArrayNotEmpty,
   IsNotEmpty,
@@ -9,7 +8,6 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
-import { RoleUtilisateur } from '../../../generated/prisma/enums.js';
 
 const nettoyerNom = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -26,10 +24,6 @@ export class CreerUtilisateurDto {
   @Transform(nettoyerEmail)
   @IsEmail({}, { message: 'L’adresse email est invalide.' })
   email!: string;
-
-  @IsOptional()
-  @IsEnum(RoleUtilisateur, { message: 'Le rôle historique est invalide.' })
-  role?: RoleUtilisateur;
 
   @IsOptional()
   @IsArray({ message: 'roles doit être un tableau.' })
@@ -50,10 +44,6 @@ export class ModifierUtilisateurDto {
   @Transform(nettoyerEmail)
   @IsEmail({}, { message: 'L’adresse email est invalide.' })
   email?: string;
-
-  @IsOptional()
-  @IsEnum(RoleUtilisateur, { message: 'Le rôle est invalide.' })
-  role?: RoleUtilisateur;
 
   @IsOptional()
   @IsArray({ message: 'roles doit être un tableau.' })

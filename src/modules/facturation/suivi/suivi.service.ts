@@ -294,7 +294,7 @@ export class SuiviService {
   ): Promise<FeuilleSuivi> {
     this.permissions.verifier(
       ActionFacture.SUIVI_CREER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     await this.verification.verifierTraitementAutorise(idFacture);
@@ -371,7 +371,7 @@ export class SuiviService {
   > {
     this.permissions.verifier(
       ActionFacture.SUIVI_MODIFIER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     if (Object.keys(donnees).length === 0)
@@ -444,7 +444,7 @@ export class SuiviService {
   ): Promise<FeuilleSuivi> {
     this.permissions.verifier(
       ActionFacture.SUIVI_SUPPRIMER,
-      acteur.role,
+      '',
       acteur.permissions,
     );
     const ligne = await this.prisma.ligneSuivi.findUnique({

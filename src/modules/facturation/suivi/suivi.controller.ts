@@ -37,6 +37,7 @@ import {
   FeuilleSuiviModifieeResponseDto,
   FeuilleSuiviResponseDto,
 } from '../dtos/suivi-response.dto.js';
+import { RequireResourcePermissions } from '../../auth/authorization.decorators.js';
 
 interface RequeteAvecUtilisateur {
   user?: ActeurFacture;
@@ -48,6 +49,7 @@ const PIPE = new ValidationPipe({
 });
 
 @Controller()
+@RequireResourcePermissions('follow-up.read', 'follow-up.write')
 @ApiExtraModels(
   CibleSuiviResponseDto,
   FeuilleSuiviCompacteResponseDto,

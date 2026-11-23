@@ -39,9 +39,14 @@ import { CreateProviderDto, UpdateProviderDto } from './dtos/provider.dto.js';
 import { UpdateProviderConventionUseCase } from './use-cases/provider-convention.update.js';
 import { ProviderTreeDeletionUseCase } from './use-cases/provider-tree.delete.js';
 import { ProviderResponseDto } from './dtos/provider-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('providers')
 @ApiExtraModels(CreateProviderDto)
+@RequireResourcePermissions('providers.read', 'providers.write')
 export class ProviderController {
   constructor(
     private readonly saveProviderUseCase: SaveProviderUseCase,
@@ -53,6 +58,7 @@ export class ProviderController {
   ) {}
 
   @Delete(':id')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -60,6 +66,7 @@ export class ProviderController {
   }
 
   @Post(':id/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -67,6 +74,7 @@ export class ProviderController {
   }
 
   @Post(':id/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -128,6 +136,7 @@ export class ProviderController {
   }
 
   @Get('deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: ProviderResponseDto, isArray: true })
   async findDeletionRequests(): Promise<ProviderResponseDto[]> {
     return this.readProviderUseCase.findDeletionRequests();

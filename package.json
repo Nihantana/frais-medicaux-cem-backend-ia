@@ -23,7 +23,15 @@
     "seed:demo-suivi": "tsc -p tsconfig.demo.json && node dist-demo/scripts/seed-demo-suivi.js",
     "seed:facturation-demo": "tsc -p tsconfig.seed-facturation.json && node dist-seed-facturation/scripts/seed-facturation-demo.js",
     "seed:soutenance": "tsc -p tsconfig.seed-soutenance.json && node dist-seed-soutenance/scripts/seed-soutenance.js",
-    "seed:jeu-test-ia": "tsc -p tsconfig.seed-jeu-test-ia.json && node dist-seed-jeu-test-ia/scripts/seed-jeu-test-ia.js"
+    "seed:jeu-test-ia": "tsc -p tsconfig.seed-jeu-test-ia.json && node dist-seed-jeu-test-ia/scripts/seed-jeu-test-ia.js",
+    "seed:access-control": "tsc -p tsconfig.seed-access-control.json && node dist-seed-access-control/scripts/seed-access-control.js",
+    "seed:organizational-structures": "tsc -p tsconfig.seed-organizational-structures.json && node dist-seed-organizational-structures/scripts/seed-organizational-structures.js",
+    "seed:administrator": "tsc -p tsconfig.seed-administrator.json && node dist-seed-administrator/scripts/seed-administrator.js",
+    "seed:agents-beneficiaries": "tsc -p tsconfig.seed-agents-beneficiaries.json && node dist-seed-agents-beneficiaries/scripts/seed-agents-beneficiaries.js",
+    "seed:actes-plafonds": "tsc -p tsconfig.seed-actes-plafonds.json && node dist-seed-actes-plafonds/scripts/seed-actes-plafonds.js",
+    "seed:regles-prise-en-charge": "tsc -p tsconfig.seed-regles-prise-en-charge.json && node dist-seed-regles-prise-en-charge/scripts/seed-regles-prise-en-charge.js",
+    "seed:lieux-prestataires": "tsc -p tsconfig.seed-lieux-prestataires.json && node dist-seed-lieux-prestataires/scripts/seed-lieux-prestataires.js",
+    "audit:permissions": "node scripts/audit-permissions.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
@@ -69,7 +77,8 @@
     "supertest": "^7.0.0",
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "xlsx": "^0.18.5"
   },
   "allowScripts": {
     "puppeteer@25.13.0": true

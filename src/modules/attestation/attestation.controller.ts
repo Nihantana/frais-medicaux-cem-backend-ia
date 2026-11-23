@@ -26,8 +26,13 @@ import {
   ApiProduces,
 } from '@nestjs/swagger';
 import { AttestationResponseDto } from './dtos/attestation-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('attestations')
+@RequireResourcePermissions('attestations.read', 'attestations.write')
 export class AttestationController {
   constructor(
     private readonly attestationDeleteUseCase: DeleteAttestationUseCase,
@@ -56,6 +61,7 @@ export class AttestationController {
   }
 
   @Patch(':id/approval')
+  @RequirePermissions('attestations.validate')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Attestation approuvée.' })
   async approve(@Param('id', ParseIntPipe) id: number) {
@@ -63,6 +69,7 @@ export class AttestationController {
   }
 
   @Patch(':id/rejection')
+  @RequirePermissions('attestations.validate')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Attestation rejetée.' })
   async reject(@Param('id', ParseIntPipe) id: number) {
@@ -70,6 +77,7 @@ export class AttestationController {
   }
 
   @Delete(':id')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Attestation supprimée.' })
   async delete(@Param('id', ParseIntPipe) id: number) {

@@ -31,11 +31,13 @@ import { obtenirUtilisateurId } from '../shared/utilisateur-facture.js';
 import type { RequeteAvecUtilisateur } from '../shared/utilisateur-facture.js';
 import { PieceJointeFactureService } from './piece-jointe-facture.service.js';
 import { PieceJointeFactureResponseDto } from '../dtos/piece-jointe-response.dto.js';
+import { RequireResourcePermissions } from '../../auth/authorization.decorators.js';
 
 const TAILLE_MAX_OCTETS = 10 * 1024 * 1024;
 
 @ApiTags('Pièces jointes')
 @Controller('factures/:id/pieces-jointes')
+@RequireResourcePermissions('invoices.read', 'invoices.write')
 export class PieceJointeFactureController {
   constructor(private readonly piecesJointes: PieceJointeFactureService) {}
 

@@ -38,6 +38,10 @@ import {
   FactureGlobaleModificationResponseDto,
   FactureWorkflowResponseDto,
 } from '../../dtos/facture-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../../../auth/authorization.decorators.js';
 
 interface RequeteAvecUtilisateur {
   user?: ActeurFacture;
@@ -75,6 +79,7 @@ export const VALIDATION_ACTION = new ValidationPipe({
 });
 
 @Controller('factures')
+@RequireResourcePermissions('invoices.read', 'invoices.write')
 @ApiExtraModels(
   FactureWorkflowResponseDto,
   FactureGlobaleModificationResponseDto,
@@ -83,6 +88,7 @@ export class FactureWorkflowController {
   constructor(private readonly factureGlobaleService: FactureGlobaleService) {}
 
   @Patch(':id/statut')
+  @RequirePermissions('invoices.read')
   @ApiOkResponse({ type: FactureWorkflowResponseDto })
   @ApiOperation({
     summary: 'Exécuter une action sur une facture',

@@ -43,6 +43,7 @@ import {
   CategorieActeAvecPlafondsResponseDto,
   CategorieActeResponseDto,
 } from './dtos/categorie-acte-response.dto.js';
+import { RequireResourcePermissions } from '../auth/authorization.decorators.js';
 
 const CREATE_CATEGORIE_PIPE = new ValidationPipe({
   transform: true,
@@ -56,6 +57,7 @@ const UPDATE_CATEGORIE_PIPE = new ValidationPipe({
 });
 
 @Controller('categories-actes')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 @ApiExtraModels(
   CategorieActeResponseDto,
   CategorieActeAvecPlafondsResponseDto,

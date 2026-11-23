@@ -24,8 +24,13 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { ProviderCategoryResponseDto } from './dtos/provider-category-response.dto.js';
+import {
+  RequirePermissions,
+  RequireResourcePermissions,
+} from '../auth/authorization.decorators.js';
 
 @Controller('provider-categories')
+@RequireResourcePermissions('reference-data.read', 'referentials.manage')
 export class ProviderCategoryController {
   constructor(
     private readonly saveProviderCategoryUseCase: SaveProviderCategoryUseCase,
@@ -35,6 +40,7 @@ export class ProviderCategoryController {
   ) {}
 
   @Delete(':id')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression enregistrée.' })
   async requestDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -42,6 +48,7 @@ export class ProviderCategoryController {
   }
 
   @Post(':id/deletion-validation')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Suppression validée.' })
   async validateDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -49,6 +56,7 @@ export class ProviderCategoryController {
   }
 
   @Post(':id/deletion-rejection')
+  @RequirePermissions('deletions.manage')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Demande de suppression rejetée.' })
   async rejectDeletion(@Param('id', ParseIntPipe) id: number): Promise<void> {
@@ -70,6 +78,7 @@ export class ProviderCategoryController {
   }
 
   @Get('deletion-requests')
+  @RequirePermissions('deletions.manage')
   @ApiOkResponse({ type: ProviderCategoryResponseDto, isArray: true })
   async findDeletionRequests(): Promise<ProviderCategoryResponseDto[]> {
     return this.readProviderCategoryUseCase.findDeletionRequests();

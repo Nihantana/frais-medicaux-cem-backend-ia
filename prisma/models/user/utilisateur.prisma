@@ -4,8 +4,6 @@ model Utilisateur {
   email        String?         @unique
   oauthSubject String?         @unique @map("oauth_subject")
   photoPath    String?         @map("photo_path") @db.VarChar(500)
-  role         RoleUtilisateur
-
   rolesAssignees            UtilisateurRole[]
   permissionsPersonnalisees UtilisateurPermission[]
   facturesEnregistrees      FactureGlobale[]        @relation("FactureEnregistreePar")
@@ -42,21 +40,10 @@ model JournalAction {
   @@schema("utilisateur")
 }
 
-enum RoleUtilisateur {
-  OPERATEUR      @map("operateur")
-  ADJOINT        @map("adjoint")
-  CHEF           @map("chef")
-  ADMINISTRATEUR @map("administrateur")
-
-  @@map("role_utilisateur")
-  @@schema("utilisateur")
-}
-
 model Permission {
   id                 Int                     @id @default(autoincrement())
   code               String                  @unique
   libelle            String
-  rolesParDefaut     RolePermission[]
   personnalisations  UtilisateurPermission[]
   rolesConfigurables RoleConfigPermission[]
 
@@ -96,17 +83,6 @@ model RoleConfigPermission {
 
   @@id([roleId, permissionId])
   @@map("role_config_permission")
-  @@schema("utilisateur")
-}
-
-model RolePermission {
-  role         RoleUtilisateur
-  permissionId Int             @map("permission_id")
-  autorisee    Boolean         @default(true)
-  permission   Permission      @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([role, permissionId])
-  @@map("role_permission")
   @@schema("utilisateur")
 }
 

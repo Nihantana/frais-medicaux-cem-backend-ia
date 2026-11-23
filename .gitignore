@@ -2,12 +2,23 @@ private-data
 FRM_BACKEND_IA/dist-seed-jeu-test-ia
 test
 
+# Seed configuration and scripts
+/tsconfig.seed*.json
+/scripts/seed*.ts
+
 # compiled output
 /dist
 /dist-demo
 /dist-seed-facturation
 /dist-seed-jeu-test-ia
 /dist-seed-soutenance
+/dist-seed-access-control
+/dist-seed-actes-plafonds
+/dist-seed-administrator
+/dist-seed-agents-beneficiaries
+/dist-seed-lieux-prestataires
+/dist-seed-organizational-structures
+/dist-seed-regles-prise-en-charge
 /node_modules
 /build
 /test

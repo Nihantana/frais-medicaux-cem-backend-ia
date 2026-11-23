@@ -5,11 +5,13 @@ import { CloturePaieResponseDto } from '../../dtos/paie-response.dto.js';
 import { obtenirUtilisateurId } from '../../shared/utilisateur-facture.js';
 import type { RequeteAvecUtilisateur } from '../../shared/utilisateur-facture.js';
 import { CloturePaieService } from './cloture-paie.service.js';
+import { RequirePermissions } from '../../../auth/authorization.decorators.js';
 
 const VALIDATION_PAYLOAD = new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true });
 
 @ApiTags('Paies')
 @Controller('factures')
+@RequirePermissions('payroll.close')
 export class CloturePaieController {
   constructor(private readonly cloturePaie: CloturePaieService) {}
 

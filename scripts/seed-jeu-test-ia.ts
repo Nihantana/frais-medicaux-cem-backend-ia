@@ -13,7 +13,6 @@ import { FileStorageService } from '../src/infrastructure/storage/file-storage.s
 import {
   AgentConcerne,
   AgentType,
-  RoleUtilisateur,
   Sexe,
   StatutAttestation,
   StatutControleVisuel,
@@ -41,9 +40,9 @@ const FICHIER_MANIFESTE = join(
 const DATE_FACTURE = '2026-01-15';
 const DATE_RECEPTION = '2026-01-16';
 const DATE_PEC = '2026-01-10';
-const DATE_EFFET_PLAFONDS_TEST = '2026-01-01';
+const DATE_EFFET_PLAFONDS_TEST = '1900-01-01';
 const DATE_FIN_PLAFONDS_TEST = '2026-11-13';
-const DATE_EFFET_PLAFONDS_ACTUELS = '2026-11-14';
+const DATE_EFFET_PLAFONDS_ACTUELS = '1900-01-01';
 const DESTINATAIRE = 'Caisse d Epargne de Madagascar';
 const ID_UTILISATEUR_OPERATEUR = 9001;
 const ID_UTILISATEUR_ADJOINT = 9002;
@@ -58,10 +57,9 @@ const STATUTS_UTILISATEURS = [
   {
     id: ID_UTILISATEUR_OPERATEUR,
     nom: 'OPERATEUR',
-    role: RoleUtilisateur.OPERATEUR,
   },
-  { id: ID_UTILISATEUR_ADJOINT, nom: 'ADJOINT', role: RoleUtilisateur.ADJOINT },
-  { id: ID_UTILISATEUR_CHEF, nom: 'CHEF', role: RoleUtilisateur.CHEF },
+  { id: ID_UTILISATEUR_ADJOINT, nom: 'ADJOINT' },
+  { id: ID_UTILISATEUR_CHEF, nom: 'CHEF' },
 ] as const;
 
 interface ManifestSeed {
@@ -938,21 +936,15 @@ async function assurerRegleEtUtilisateurs(
   for (const definition of STATUTS_UTILISATEURS) {
     const existant = await prisma.utilisateur.findUnique({
       where: { id: definition.id },
-      select: { id: true, role: true },
+      select: { id: true },
     });
     if (existant !== null) {
-      if (existant.role !== definition.role) {
-        throw new Error(
-          `L’utilisateur ${definition.id} existe avec un rôle incompatible; aucune donnée ne sera modifiée.`,
-        );
-      }
       continue;
     }
     await prisma.utilisateur.create({
       data: {
         id: definition.id,
         nom: prefixe(definition.nom),
-        role: definition.role,
       },
     });
     manifest.createdUserIds.push(definition.id);
@@ -1314,7 +1306,6 @@ async function assurerFacture(
     );
     const acteur: ActeurFacture = {
       id: ID_UTILISATEUR_OPERATEUR,
-      role: RoleUtilisateur.OPERATEUR,
     };
     await service.modifierInformations(creee.id, acteur, {
       montantTotal: scenario.montantTotal,
@@ -1469,7 +1460,6 @@ async function creerLignesT5T6(
 ): Promise<void> {
   const acteur: ActeurFacture = {
     id: ID_UTILISATEUR_OPERATEUR,
-    role: RoleUtilisateur.OPERATEUR,
   };
   const scenarios = SCENARIOS.filter((scenario) =>
     SCENARIOS_T6.has(scenario.code),
@@ -1631,7 +1621,6 @@ async function actualiserTotauxT6(
 ): Promise<void> {
   const acteur: ActeurFacture = {
     id: ID_UTILISATEUR_OPERATEUR,
-    role: RoleUtilisateur.OPERATEUR,
   };
   for (const scenario of SCENARIOS.filter((item) =>
     SCENARIOS_T6.has(item.code),

@@ -21,9 +21,11 @@ import {
   LignesPaiePagineesResponseDto,
   PaieMoisResponseDto,
 } from '../../dtos/paie-response.dto.js';
+import { RequireAnyPermission } from '../../../auth/authorization.decorators.js';
 
 @ApiTags('Paies')
 @Controller('paies')
+@RequireAnyPermission('reporting.read', 'payroll.read')
 export class PaieEtatController {
   constructor(private readonly paieEtat: PaieEtatService) {}
 

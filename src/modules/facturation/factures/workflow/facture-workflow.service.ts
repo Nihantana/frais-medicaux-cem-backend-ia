@@ -1,6 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import {
-  RoleUtilisateur,
   StatutFacture,
   TypeMouvement,
 } from '../../../../generated/prisma/enums.js';
@@ -11,7 +10,7 @@ export { ActionFacture } from '../../shared/action-facture.js';
 
 interface TransitionAutorisee {
   statutSuivant?: StatutFacture;
-  roles: readonly RoleUtilisateur[];
+  roles: readonly string[];
 }
 
 interface DefinitionAction {
@@ -33,7 +32,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.ENREGISTREE]: {
         statutSuivant: StatutFacture.RETOURNEE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
     },
   },
@@ -43,11 +42,11 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.ENREGISTREE]: {
         statutSuivant: StatutFacture.EN_VALIDATION,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.A_CORRIGER]: {
         statutSuivant: StatutFacture.EN_VALIDATION,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
     },
   },
@@ -57,7 +56,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.EN_VALIDATION]: {
         statutSuivant: StatutFacture.VALIDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
     },
   },
@@ -67,7 +66,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.EN_VALIDATION]: {
         statutSuivant: StatutFacture.A_CORRIGER,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
     },
   },
@@ -77,7 +76,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.VALIDEE]: {
         statutSuivant: StatutFacture.SORTIE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
     },
   },
@@ -87,27 +86,27 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.ENREGISTREE]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
       [StatutFacture.EN_VALIDATION]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
       [StatutFacture.RETOURNEE]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
       [StatutFacture.VALIDEE]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
       [StatutFacture.SORTIE]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
       [StatutFacture.A_CORRIGER]: {
         statutSuivant: StatutFacture.SUPPRESSION_DEMANDEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
     },
   },
@@ -117,7 +116,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.SUPPRESSION_DEMANDEE]: {
         statutSuivant: StatutFacture.SUPPRIMEE,
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
     },
   },
@@ -126,7 +125,7 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     champsRequis: [],
     depuis: {
       [StatutFacture.SUPPRESSION_DEMANDEE]: {
-        roles: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+        roles: ['ADJOINT', 'CHEF_SERVICE'],
       },
     },
   },
@@ -135,27 +134,27 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.ENREGISTREE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.EN_VALIDATION]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.RETOURNEE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.VALIDEE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.SORTIE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.A_CORRIGER]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
     },
   },
@@ -164,27 +163,27 @@ const TRANSITIONS: Record<ActionFacture, DefinitionAction> = {
     depuis: {
       [StatutFacture.ENREGISTREE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.EN_VALIDATION]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.RETOURNEE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.VALIDEE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.SORTIE]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
       [StatutFacture.A_CORRIGER]: {
         statutSuivant: StatutFacture.ENREGISTREE,
-        roles: [RoleUtilisateur.OPERATEUR],
+        roles: ['ASSISTANT'],
       },
     },
   },
@@ -229,7 +228,7 @@ export class FactureWorkflowService {
   determinerTransition(
     statutActuel: StatutFacture,
     action: ActionFacture,
-    role: RoleUtilisateur,
+    role: string,
     statutSuivantDynamique?: StatutFacture,
     permissions?: readonly string[],
   ): StatutFacture {

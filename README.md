@@ -53,6 +53,42 @@ npm run test:e2e
 npm run lint
 ```
 
+### Permissions par rôle
+
+Le catalogue des permissions et les profils du cahier des charges sont
+initialisés après le déploiement du schéma avec `npm run seed:access-control`.
+Les droits par défaut sont définis par profil dans le code; seules les
+modifications faites par un administrateur sont enregistrées en base. Le seed
+est idempotent et conserve ces personnalisations. Il doit être exécuté sur la
+base cible avant d’activer l’application avec les nouveaux contrôles d’accès.
+
+Les droits des utilisateurs authentifiés sont exposés par
+`GET /auth/me/permissions`. Les API et l’interface utilisent les mêmes codes
+de permission. Les fonctions hors périmètre du cahier des charges ne sont pas
+accordées par défaut aux rôles métier; l’administrateur peut les attribuer
+depuis la gestion des rôles et des utilisateurs.
+
+### Import des directions, services et agences
+
+La commande suivante importe le classeur Excel de manière idempotente :
+
+```powershell
+npm run seed:organizational-structures -- "D:/chemin/Sheet AGENCE & SERVICE.xlsx"
+```
+
+Sans argument, le script recherche le fichier
+`D:/AVOTRASINA/DATA FRM/Sheet AGENCE & SERVICE.xlsx`. Il lit l’onglet
+`Direction Service`, met à jour les libellés existants et ignore les lignes
+de direction sans code de service. Les codes des agences, directions et services
+constituent les clés d’identification.
+
+Le seed nettoie aussi les anciens codes dynamiques obsolètes `OPERATEUR` et
+`CHEF` présents dans la table des rôles: les affectations sont déplacées vers
+`ASSISTANT` et `CHEF_SERVICE`, et leurs dérogations de permissions sont
+conservées. Les valeurs historiques `OPERATEUR`, `ADJOINT`, `CHEF` et
+`ADMINISTRATEUR` restent nécessaires dans l’enum technique pour la compatibilité
+des anciennes factures et workflows.
+
 ### Conventions du code et de l'API
 
 - La logique métier est regroupée par domaine sous `src/modules/<module>`.

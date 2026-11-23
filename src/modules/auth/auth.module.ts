@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from '../../infrastructure/prisma/prisma.module.js';
 import { AuthController } from './auth.controller.js';
 import { KeycloakAuthGuard } from './keycloak-auth.guard.js';
@@ -18,6 +19,7 @@ import { ProfileService } from './profile.service.js';
     KeycloakAuthGuard,
     AuthorizationService,
     PermissionsGuard,
+    { provide: APP_GUARD, useExisting: PermissionsGuard },
     RolesGuard,
   ],
   exports: [

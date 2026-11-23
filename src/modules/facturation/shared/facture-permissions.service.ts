@@ -1,36 +1,35 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { RoleUtilisateur } from '../../../generated/prisma/enums.js';
 import { ActionFacture } from './action-facture.js';
 
 /** Rôles hérités du workflow actuel; ils restent à confirmer par le métier. */
 export const ROLES_ACTION_FACTURE: Readonly<
-  Record<ActionFacture, readonly RoleUtilisateur[]>
+  Record<ActionFacture, readonly string[]>
 > = {
-  [ActionFacture.RETOUR_PRESTATAIRE]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.ENVOI_VALIDATION]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.VALIDATION]: [RoleUtilisateur.ADJOINT, RoleUtilisateur.CHEF],
+  [ActionFacture.RETOUR_PRESTATAIRE]: ['ASSISTANT'],
+  [ActionFacture.ENVOI_VALIDATION]: ['ASSISTANT'],
+  [ActionFacture.VALIDATION]: ['ADJOINT', 'CHEF_SERVICE'],
   [ActionFacture.RETOUR_CORRECTION]: [
-    RoleUtilisateur.ADJOINT,
-    RoleUtilisateur.CHEF,
+    'ADJOINT',
+    'CHEF_SERVICE',
   ],
-  [ActionFacture.SORTIE]: [RoleUtilisateur.OPERATEUR],
+  [ActionFacture.SORTIE]: ['ASSISTANT'],
   [ActionFacture.DEMANDE_SUPPRESSION]: [
-    RoleUtilisateur.ADJOINT,
-    RoleUtilisateur.CHEF,
+    'ADJOINT',
+    'CHEF_SERVICE',
   ],
   [ActionFacture.VALIDATION_SUPPRESSION]: [
-    RoleUtilisateur.ADJOINT,
-    RoleUtilisateur.CHEF,
+    'ADJOINT',
+    'CHEF_SERVICE',
   ],
   [ActionFacture.REFUS_SUPPRESSION]: [
-    RoleUtilisateur.ADJOINT,
-    RoleUtilisateur.CHEF,
+    'ADJOINT',
+    'CHEF_SERVICE',
   ],
-  [ActionFacture.MODIFIER_INFORMATIONS]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.MODIFIER_MONTANTS]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.SUIVI_CREER]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.SUIVI_MODIFIER]: [RoleUtilisateur.OPERATEUR],
-  [ActionFacture.SUIVI_SUPPRIMER]: [RoleUtilisateur.OPERATEUR],
+  [ActionFacture.MODIFIER_INFORMATIONS]: ['ASSISTANT'],
+  [ActionFacture.MODIFIER_MONTANTS]: ['ASSISTANT'],
+  [ActionFacture.SUIVI_CREER]: ['ASSISTANT'],
+  [ActionFacture.SUIVI_MODIFIER]: ['ASSISTANT'],
+  [ActionFacture.SUIVI_SUPPRIMER]: ['ASSISTANT'],
 };
 
 @Injectable()
@@ -41,7 +40,7 @@ export class FacturePermissionsService {
 
   verifier(
     action: ActionFacture,
-    role: RoleUtilisateur,
+    role: string,
     permissions?: readonly string[],
   ): void {
     if (permissions !== undefined) {

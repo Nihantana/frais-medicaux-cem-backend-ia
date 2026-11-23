@@ -12,10 +12,12 @@ import { KeycloakAuthGuard } from '../auth/keycloak-auth.guard.js';
 import { AdministrateurGuard } from '../utilisateur/guards/administrateur.guard.js';
 import { AuditQueryDto } from './dtos/audit-query.dto.js';
 import { AuditService } from './audit.service.js';
+import { RequirePermissions } from '../auth/authorization.decorators.js';
 
 @ApiTags('Audit')
 @Controller('audit')
 @UseGuards(KeycloakAuthGuard, AdministrateurGuard)
+@RequirePermissions('audit.read')
 export class AuditController {
   constructor(private readonly audit: AuditService) {}
 

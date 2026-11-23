@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -22,7 +21,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { RoleUtilisateur } from '../../generated/prisma/enums.js';
 import {
   MessageResponseDto,
   UtilisateurReponseAvecMessageDto,
@@ -37,8 +35,11 @@ import { CreerRoleDto, ModifierRoleDto } from './dtos/role.dto.js';
 import { AdministrateurGuard } from './guards/administrateur.guard.js';
 import { UtilisateurService } from './utilisateur.service.js';
 import { KeycloakAuthGuard } from '../auth/keycloak-auth.guard.js';
+import {
+  RequireAnyPermission,
+  RequirePermissions,
+} from '../auth/authorization.decorators.js';
 
-const ROLES_VALIDES = Object.values(RoleUtilisateur);
 const VALIDATION_PAYLOAD = new ValidationPipe({
   transform: true,
   whitelist: true,
@@ -52,6 +53,7 @@ export class UtilisateurController {
   constructor(private readonly utilisateurs: UtilisateurService) {}
 
   @Get()
+  @RequireAnyPermission('invoices.write', 'envoi-validation')
   @ApiOkResponse({ type: UtilisateurResponseDto, isArray: true })
   @ApiOperation({
     summary: 'Lister les utilisateurs',
@@ -239,19 +241,12 @@ export class UtilisateurController {
     return { message: 'La permission par défaut a été restaurée.' };
   }
 
-  private validerRoles(role?: string): RoleUtilisateur[] | undefined {
+  private validerRoles(role?: string): string[] | undefined {
     if (role === undefined) return undefined;
-    const valeurs = role.split(',').map((valeur) => valeur.trim());
-    if (
-      valeurs.length === 0 ||
-      valeurs.some(
-        (valeur) => !ROLES_VALIDES.includes(valeur as RoleUtilisateur),
-      )
-    ) {
-      throw new BadRequestException(
-        'Le filtre role contient un rôle invalide.',
-      );
-    }
-    return valeurs as RoleUtilisateur[];
+    const valeurs = role
+      .split(',')
+      .map((valeur) => valeur.trim().toUpperCase())
+      .filter((valeur) => valeur !== '');
+    return valeurs.length === 0 ? undefined : valeurs;
   }
 }

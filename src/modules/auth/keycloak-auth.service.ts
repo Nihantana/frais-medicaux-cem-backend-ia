@@ -65,7 +65,6 @@ export class KeycloakAuthService {
         nom: true,
         email: true,
         photoPath: true,
-        role: true,
         rolesAssignees: { select: { role: { select: { code: true } } } },
       },
     });
@@ -79,7 +78,6 @@ export class KeycloakAuthService {
         id: existant.id,
         nom: existant.nom,
         email: existant.email,
-        role: existant.role,
         roles: existant.rolesAssignees.map(({ role }) => role.code),
         hasPhoto: existant.photoPath !== null,
       };
@@ -93,7 +91,6 @@ export class KeycloakAuthService {
         email: true,
         oauthSubject: true,
         photoPath: true,
-        role: true,
         rolesAssignees: { select: { role: { select: { code: true } } } },
       },
     });
@@ -111,7 +108,6 @@ export class KeycloakAuthService {
         nom: true,
         email: true,
         photoPath: true,
-        role: true,
         rolesAssignees: { select: { role: { select: { code: true } } } },
       },
     });
@@ -124,7 +120,6 @@ export class KeycloakAuthService {
       id: utilisateur.id,
       nom: utilisateur.nom,
       email: utilisateur.email,
-      role: utilisateur.role,
       roles: utilisateur.rolesAssignees.map(({ role }) => role.code),
       hasPhoto: utilisateur.photoPath !== null,
     };

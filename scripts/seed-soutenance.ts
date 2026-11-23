@@ -6,7 +6,6 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Prisma } from '../src/generated/prisma/client.js';
 import {
   AgentType,
-  RoleUtilisateur,
   Sexe,
   StatutAttestation,
   StatutFacture,
@@ -107,17 +106,17 @@ async function main() {
     }
 
     let operator = await prisma.utilisateur.findFirst({
-      where: { role: RoleUtilisateur.OPERATEUR },
+      where: { rolesAssignees: { some: { role: { code: 'ASSISTANT' } } } },
       select: { id: true },
     });
     if (operator === null) {
       operator = await prisma.utilisateur.create({
-        data: { nom: 'Service authentification', role: RoleUtilisateur.OPERATEUR },
+        data: { nom: 'Service authentification' },
         select: { id: true },
       });
     }
     const chief = await prisma.utilisateur.findFirst({
-      where: { role: RoleUtilisateur.CHEF },
+      where: { rolesAssignees: { some: { role: { code: 'CHEF_SERVICE' } } } },
       select: { id: true },
     });
 

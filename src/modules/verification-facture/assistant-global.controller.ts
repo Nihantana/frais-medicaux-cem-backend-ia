@@ -3,9 +3,11 @@ import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { KeycloakAuthGuard } from '../auth/keycloak-auth.guard.js';
 import { QuestionAssistantFactureDto, ReponseAssistantFactureDto } from './dtos/assistant-facture.dto.js';
 import { AssistantGlobalService } from './assistant-global.service.js';
+import { RequirePermissions } from '../auth/authorization.decorators.js';
 
 @ApiTags('Assistant global')
 @Controller('assistant')
+@RequirePermissions('assistant.use')
 export class AssistantGlobalController {
   constructor(private readonly assistant: AssistantGlobalService) {}
 

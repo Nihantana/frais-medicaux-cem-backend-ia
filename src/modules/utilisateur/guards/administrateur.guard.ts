@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { RoleUtilisateur } from '../../../generated/prisma/enums.js';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 
 interface RequeteAvecUtilisateur extends Request {
@@ -30,7 +29,6 @@ export class AdministrateurGuard implements CanActivate {
       where: { id: userId },
       select: {
         id: true,
-        role: true,
         rolesAssignees: { select: { role: { select: { code: true } } } },
       },
     });
@@ -39,9 +37,9 @@ export class AdministrateurGuard implements CanActivate {
         "L'utilisateur authentifié est introuvable.",
       );
     }
-    const estAdministrateur =
-      user.role === RoleUtilisateur.ADMINISTRATEUR ||
-      user.rolesAssignees.some(({ role }) => role.code === 'ADMINISTRATEUR');
+    const estAdministrateur = user.rolesAssignees.some(
+      ({ role }) => role.code === 'ADMINISTRATEUR',
+    );
     if (!estAdministrateur) {
       throw new ForbiddenException(
         "L'utilisateur authentifié n'est pas administrateur.",
